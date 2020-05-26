@@ -858,6 +858,7 @@ endif
 
 # Always append ALL so that arch config.mk's can add custom ones
 ALL-y += u-boot.srec u-boot.bin u-boot.sym System.map binary_size_check
+ALL-y += env-default
 
 ALL-$(CONFIG_ONENAND_U_BOOT) += u-boot-onenand.bin
 ifeq ($(CONFIG_SPL_FSL_PBL),y)
@@ -1260,6 +1261,10 @@ u-boot.ldr:	u-boot
 		$(CREATE_LDR_ENV)
 		$(LDR) -T $(CONFIG_CPU) -c $@ $< $(LDR_FLAGS)
 		$(BOARD_SIZE_CHECK)
+
+# Extract default environment to a file
+env-default: env/built-in.o FORCE
+	$(shell $(CONFIG_SHELL) $(srctree)/scripts/get_default_envs.sh $(build-dir) > $@.txt)
 
 # binman
 # ---------------------------------------------------------------------------
