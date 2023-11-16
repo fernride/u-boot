@@ -13,12 +13,14 @@ include $(LIBFDT_srcdir)/Makefile.libfdt
 PYLIBFDT_srcs = $(addprefix $(LIBFDT_srcdir)/,$(LIBFDT_SRCS)) \
 		$(obj)/libfdt.i
 
+python_inc = $(shell $(PYTHON3) -c "from sysconfig import get_paths; print(get_paths()['include'])")
+
 quiet_cmd_pymod = PYMOD   $@
       cmd_pymod = unset CROSS_COMPILE; unset CFLAGS; \
 		CC="$(HOSTCC)" LDSHARED="$(HOSTCC) -shared " \
 		LDFLAGS="$(HOSTLDFLAGS)" \
 		VERSION="u-boot-$(UBOOTVERSION)" \
-		CPPFLAGS="$(HOSTCFLAGS) -I$(LIBFDT_srcdir)" OBJDIR=$(obj) \
+		CPPFLAGS="$(HOSTCFLAGS) -I$(LIBFDT_srcdir) -I$(python_inc) -I/usr/include/python3.8" OBJDIR=$(obj) \
 		SOURCES="$(PYLIBFDT_srcs)" \
 		SWIG_OPTS="-I$(LIBFDT_srcdir) -I$(LIBFDT_srcdir)/.." \
 		$(PYTHON3) $< --quiet build_ext --inplace

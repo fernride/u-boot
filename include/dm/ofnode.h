@@ -908,6 +908,21 @@ ofnode ofnode_by_prop_value(ofnode from, const char *propname,
 	     ofnode_valid(node); \
 	     node = ofnode_next_subnode(node))
 
+#define ofnode_for_each_available_child(node, parent) \
+    for (node = ofnode_first_subnode(parent); \
+         ofnode_is_available(node); \
+         node = ofnode_next_subnode(node))
+
+#define ofnode_for_each_available_compatible_child(node, parent, compat) \
+    for (node = ofnode_first_subnode(parent); \
+         ofnode_is_available(node) && ofnode_device_is_compatible(node, compat); \
+         node = ofnode_next_subnode(node))
+
+#define ofnode_for_each_compatible_child(node, parent, compat) \
+    for (node = ofnode_first_subnode(parent); \
+         ofnode_device_is_compatible(node, compat); \
+         node = ofnode_next_subnode(node))
+
 /**
  * ofnode_translate_address() - Translate a device-tree address
  *

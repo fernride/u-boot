@@ -92,13 +92,27 @@ exit:
 #endif /* FSL_PFENG_FW_LOC_SDCARD */
 
 #if CONFIG_IS_ENABLED(FSL_PFENG_FW_LOC_QSPI)
-static int setup_flash_device(struct spi_flash **flash)
+static int setup_flash_device(struct spi_flash **flash, const char *const part)
 {
 	struct udevice *new;
 	int	ret;
+	unsigned int bus = CONFIG_ENV_SPI_BUS, cs = CONFIG_ENV_SPI_BUS;
+
+	if (part) { // format "bus:cs"
+	    char *const fw_part = strdup(part);
+	    char *p = strchr(fw_part, ':');
+
+	    if (p) {
+	        *p = '\0';
+	        bus = strtoul(fw_part, NULL, 10);
+	        p++;
+	        if (*p)
+	            cs = strtoul(p, NULL, 10);
+	    }
+	}
 
 	/* Use default QSPI device. Speed and mode will be read from DT */
-	ret = spi_flash_probe_bus_cs(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
+	ret = spi_flash_probe_bus_cs(bus, cs,
 				     CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE,
 				     &new);
 	if (ret) {
@@ -178,9 +192,12 @@ static int pfeng_fw_load(char *fname, char *iface, const char *part, int ftype,
 	unsigned long qspi_addr;
 	size_t elf_size;
 
-	qspi_addr = simple_strtoul(part, NULL, 16);
+	if (fname)
+	    qspi_addr = simple_strtoul(iface, NULL, 16);
+	else
+	    qspi_addr = 0x3000000;
 
-	ret = setup_flash_device(&flash);
+	ret = setup_flash_device(&flash, part);
 	if (ret)
 		goto exit;
 
@@ -312,6 +329,16 @@ static int pfeng_write_hwaddr(struct udevice *dev)
 			memcpy(pdata->eth.enetaddr, ea, ARP_HLEN);
 		return 0;
 	}
+#if CONFIG_IS_ENABLED(MICROSYS_MPXS32G274AR2) \
+	|| CONFIG_IS_ENABLED(MICROSYS_MPXS32G274AR3) \
+	|| CONFIG_IS_ENABLED(MICROSYS_MPXS32G274AR5) \
+	|| CONFIG_IS_ENABLED(MICROSYS_MPXS32G399AR3)
+	else if (eth_env_get_enetaddr_by_index("eth", priv->if_index+1, ea)) {
+		if (memcmp(pdata->eth.enetaddr, ea, ARP_HLEN))
+			memcpy(pdata->eth.enetaddr, ea, ARP_HLEN);
+		return 0;
+	}
+#endif
 
 	dev_err(dev, "Can not read hwaddr from 'pfe%daddr'\n", priv->if_index);
 	return -EINVAL;
@@ -350,6 +377,22 @@ static int pfeng_set_fw_from_env(struct pfeng_priv *priv)
 	int fw_type = FS_TYPE_ANY;
 	char *p;
 
+#if CONFIG_IS_ENABLED(MICROSYS_MPXS32G274AR2) \
+	|| CONFIG_IS_ENABLED(MICROSYS_MPXS32G274AR3) \
+	|| CONFIG_IS_ENABLED(MICROSYS_MPXS32G274AR5) \
+	|| CONFIG_IS_ENABLED(MICROSYS_MPXS32G399AR3)
+	/*
+	 * Load of PFE firmware should always be from boot media.
+	 * @see #4505
+	 */
+#if CONFIG_IS_ENABLED(FSL_PFENG_FW_LOC_QSPI)
+	env_fw = __stringify(PFENG_FLASH_FW_OFFSET)"@6:0";
+#endif
+#if CONFIG_IS_ENABLED(FSL_PFENG_FW_LOC_SDCARD)
+	env_fw = "mmc@0:1:s32g_pfe_class.fw";
+#endif
+	env_set(PFENG_ENV_VAR_FW_SOURCE, env_fw);
+#endif
 	/* Parse fw destination from environment */
 	env_fw = env_get(PFENG_ENV_VAR_FW_SOURCE);
 	if (env_fw && strlen(env_fw)) {
@@ -364,9 +407,21 @@ static int pfeng_set_fw_from_env(struct pfeng_priv *priv)
 
 		/* check for dev:part:fwname */
 		if ((p = strrchr(env_fw, ':'))) {
+#if CONFIG_IS_ENABLED(FSL_PFENG_FW_LOC_QSPI)
+            fw_part = env_fw;
+            p++;
+            if (*p) {
+                p = strrchr(p, ':');
+                if (p) {
+                    *p = '\0';
+                    fw_name = ++p;
+                }
+            }
+#else
 			*p = '\0';
 			fw_part = env_fw;
 			fw_name = ++p;
+#endif
 		} else {
 #if CONFIG_IS_ENABLED(FSL_PFENG_FW_LOC_QSPI)
 			fw_part = env_fw;
@@ -725,7 +780,7 @@ static int init_xpcs(struct pfeng_priv *priv)
 		state.speed = phy_speed;
 		state.duplex = true;
 		state.advertising = get_speed_advertised(phy_speed);
-		state.an_enabled = 0;
+		state.an_enabled = 1;
 		state.an_complete = 0;
 		ret = xpcs_ops->xpcs_config(xpcs, &state);
 		if (ret) {
@@ -796,12 +851,27 @@ static int pfeng_probe(struct udevice *dev)
 	if (!priv->chnl)
 		return -ENOMEM;
 
-	/* register mdios */
-	for (i = 0; i < PFENG_EMACS_COUNT; i++)
-		if (priv->config->config_mac_mask & (1 << i))
-			pfeng_mdio_register(priv, i);
-		else
-			dev_warn(dev, "skipped MDIO bus for EMAC %d\n", i);
+	{
+		ofnode pfe_mdio;
+		char state_name[32];
+		u32 index;
+
+		for (i = 0; i < PFENG_EMACS_COUNT; i++)
+			priv->mii[i] = NULL;
+
+		ofnode_for_each_compatible_child(pfe_mdio,
+				dev->node, "nxp,pfeng-mdio") {
+			if (ofnode_is_available(pfe_mdio)) {
+				ofnode_read_u32(pfe_mdio, "reg", &index);
+				if ((index >= 0 && index < PFENG_EMACS_COUNT)
+						&& !priv->mii[index]) {
+					snprintf(state_name, 32, "pfe_mdio%d", index);
+					pinctrl_select_state(dev, state_name);
+					pfeng_mdio_register(priv, (int) index);
+				}
+			}
+		}
+	}
 
 	return 0;
 }

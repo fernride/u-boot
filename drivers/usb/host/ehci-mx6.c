@@ -148,14 +148,23 @@ static void usb_power_config(int index)
 #endif
 
 #if defined(CONFIG_MX6) || defined(CONFIG_TARGET_S32G2XXAEVB) || \
-	defined(CONFIG_TARGET_S32G3XXAEVB)
+	defined(CONFIG_TARGET_S32G3XXAEVB) || \
+	defined(CONFIG_MICROSYS_MPXS32G274AR2) || \
+	defined(CONFIG_MICROSYS_MPXS32G274AR3) || \
+	defined(CONFIG_MICROSYS_MPXS32G274AR5) || \
+	defined(CONFIG_MICROSYS_MPXS32G399AR3)
 /* Return 0 : host node, <>0 : device mode */
 static int usb_phy_enable(int index, struct usb_ehci *ehci)
 {
 	int ret;
 	void __iomem *usb_cmd;
 #if !defined(CONFIG_TARGET_S32G2XXAEVB) && \
-	!defined(CONFIG_TARGET_S32G3XXAEVB)
+	!defined(CONFIG_TARGET_S32G3XXAEVB) && \
+	!defined(CONFIG_MICROSYS_MPXS32G274AR2) && \
+	!defined(CONFIG_MICROSYS_MPXS32G274AR3) && \
+	!defined(CONFIG_MICROSYS_MPXS32G274AR5) && \
+	!defined(CONFIG_MICROSYS_MPXS32G399AR3)
+
 	void __iomem *phy_reg;
 	void __iomem *phy_ctrl;
 
@@ -179,7 +188,12 @@ static int usb_phy_enable(int index, struct usb_ehci *ehci)
 		return ret;
 
 #if !defined(CONFIG_TARGET_S32G2XXAEVB) && \
-	!defined(CONFIG_TARGET_S32G3XXAEVB)
+	!defined(CONFIG_TARGET_S32G3XXAEVB) && \
+	!defined(CONFIG_MICROSYS_MPXS32G274AR2) && \
+	!defined(CONFIG_MICROSYS_MPXS32G274AR3) && \
+	!defined(CONFIG_MICROSYS_MPXS32G274AR5) && \
+	!defined(CONFIG_MICROSYS_MPXS32G399AR3)
+
 	/* Reset USBPHY module */
 	setbits_le32(phy_ctrl, USBPHY_CTRL_SFTRST);
 	udelay(10);
@@ -282,7 +296,11 @@ int usb_phy_mode(int port)
 static void usb_oc_config(int index)
 {
 #if !defined(CONFIG_TARGET_S32G2XXAEVB) && \
-	!defined(CONFIG_TARGET_S32G3XXAEVB)
+	!defined(CONFIG_TARGET_S32G3XXAEVB) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR2) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR3) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR5) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G399AR3)
 #if defined(CONFIG_MX6)
 	struct usbnc_regs *usbnc = (struct usbnc_regs *)(USB_BASE_ADDR +
 			USB_OTHERREGS_OFFSET);
@@ -360,7 +378,11 @@ int __weak board_ehci_power(int port, int on)
 int ehci_mx6_common_init(struct usb_ehci *ehci, int index)
 {
 #if !defined(CONFIG_TARGET_S32G2XXAEVB) && \
-	!defined(CONFIG_TARGET_S32G3XXAEVB)
+	!defined(CONFIG_TARGET_S32G3XXAEVB) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR2) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR3) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR5) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G399AR3)
 	int ret;
 
 	enable_usboh3_clk(1);
@@ -380,7 +402,11 @@ int ehci_mx6_common_init(struct usb_ehci *ehci, int index)
 #endif
 
 #if defined(CONFIG_MX6) || defined(CONFIG_TARGET_S32G2XXAEVB) || \
-	defined(CONFIG_TARGET_S32G3XXAEVB)
+	defined(CONFIG_TARGET_S32G3XXAEVB) || \
+	defined(CONFIG_MICROSYS_MPXS32G274AR2) || \
+	defined(CONFIG_MICROSYS_MPXS32G274AR3) || \
+	defined(CONFIG_MICROSYS_MPXS32G274AR5) || \
+	defined(CONFIG_MICROSYS_MPXS32G399AR3)
 	usb_phy_enable(index, ehci);
 #endif
 
@@ -487,7 +513,11 @@ static const struct ehci_ops mx6_ehci_ops = {
 static int ehci_usb_phy_mode(struct udevice *dev)
 {
 #if !defined(CONFIG_TARGET_S32G2XXAEVB) && \
-	!defined(CONFIG_TARGET_S32G3XXAEVB)
+	!defined(CONFIG_TARGET_S32G3XXAEVB) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR2) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR3) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR5) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G399AR3)
 	struct usb_platdata *plat = dev_get_platdata(dev);
 	void *__iomem addr = (void *__iomem)devfdt_get_addr(dev);
 	void *__iomem phy_ctrl, *__iomem phy_status;
@@ -560,7 +590,11 @@ static int ehci_usb_ofdata_to_platdata(struct udevice *dev)
 static int ehci_usb_bind(struct udevice *dev)
 {
 #if !defined(CONFIG_TARGET_S32G2XXAEVB) && \
-	!defined(CONFIG_TARGET_S32G3XXAEVB)
+	!defined(CONFIG_TARGET_S32G3XXAEVB) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR2) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR3) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G274AR5) \
+	&& !defined(CONFIG_MICROSYS_MPXS32G399AR3)
 	/*
 	 * TODO:
 	 * This driver is only partly converted to DT probing and still uses

@@ -1,0 +1,29 @@
+# Copyright (C) 2022 MicroSys Electronics GmbH
+
+config SYS_VENDOR
+	string
+	default "microsys"
+
+config MICROSYS_MPXS32G274AR2
+	bool "Support mpxs32g274a rev. 2"
+	imply CMD_PMIC
+	imply DM_PMIC
+	imply DM_PMIC_VR5510
+	imply NXP_S32CC_BOARD_COMMON
+	imply CMD_EEPROM
+	imply I2C_EEPROM
+	imply ADC
+	imply PHY
+	imply PHYLIB
+	imply PHY_GIGE
+	imply SAF1508BET_USB_PHY
+	imply DM_USB
+	imply USB_EHCI_HCD
+	imply USB_ULPI
+	select USB
+	select USB_EHCI_MX6
+	select NXP_S32G2
+	select SARADC_S32CC
+	select SPI_FLASH_STMICRO
+	help
+		Platforms with MicroSys' MPXS32G274AR2 module

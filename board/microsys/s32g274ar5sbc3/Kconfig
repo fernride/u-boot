@@ -1,0 +1,23 @@
+# Copyright (C) 2023 MicroSys Electronics GmbH
+
+if TARGET_S32G274AR5SBC3
+
+config SYS_CONFIG_NAME
+    string
+    default "s32g274ar5sbc3"
+
+config SYS_BOARD
+    string
+    default "s32g274ar5sbc3"
+
+endif
+
+config S32CC_HWCONFIG
+    string "S32CC HWConfig definition"
+    default "serdes0:mode=pcie&xpcs0,clock=ext,fmhz=100;xpcs0_1:speed=1G;pcie0:mode=rc;serdes1:mode=pcie&xpcs0,clock=ext,fmhz=100;xpcs1_1:speed=1G;pcie1:mode=rc"
+    default ""
+    help
+      The configuration for the PCIe controllers, stored in
+      the variable 'hwconfig'
+      It configures the mode (RC, EP, SGMII) or the clock type
+      (internal or external)

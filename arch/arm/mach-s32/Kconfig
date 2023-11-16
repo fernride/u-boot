@@ -11,9 +11,16 @@ config MACH_S32
 	select DM
 	select OF_BOARD_SETUP
 
+if !(MICROSYS_MPXS32G274AR2 \
+	|| MICROSYS_MPXS32G274AR3 \
+	|| MICROSYS_MPXS32G274AR5 \
+	|| MICROSYS_MPXS32G399AR3)
+
 config SYS_VENDOR
 	string
 	default "nxp"
+
+endif
 
 config NXP_S32CC
 	bool
@@ -84,3 +91,4 @@ config NXP_S32CC
 	select SYS_MALLOC_F
 
 source "arch/arm/mach-s32/s32-cc/Kconfig"
+source "board/microsys/crxs32g/Kconfig"

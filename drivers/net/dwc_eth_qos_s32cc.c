@@ -330,6 +330,9 @@ static int eqos_set_tx_clk_speed_s32cc(struct udevice *dev)
 	if (!eqos || !eqos->phy || !eqos->mac_regs)
 		return -ENODEV;
 
+	if (eqos->phy->interface == PHY_INTERFACE_MODE_SGMII)
+		return set_tx_clk_enet_gmac(dev, SPEED_1000);
+
 	if (eqos->phy->phy_id != PHY_FIXED_ID) {
 		/*Auto neg.*/
 		u32 idx = (eqos->mac_regs->phy_if_ctrl_status
@@ -423,7 +426,7 @@ static int init_sgmii_phy(struct udevice *dev)
 	state.speed = phy_speed;
 	state.duplex = true;
 	state.advertising = get_speed_advertised(phy_speed);
-	state.an_enabled = 0;
+	state.an_enabled = 1;
 	state.an_complete = 0;
 	ret = xpcs_ops->xpcs_config(xpcs, &state);
 	if (ret) {

@@ -349,7 +349,7 @@ static int xpcs_phy_init(struct serdes *serdes, unsigned long id)
 	/* Mode 5 is virtual mode, a particularization of mode 2 */
 	if (ctrl->ss_mode == 1 || ctrl->ss_mode == 2)
 		shared = PCIE_XPCS_1G;
-	else if (ctrl->ss_mode == 5)
+	else if (/*(ctrl->ss_mode == 3) || */(ctrl->ss_mode == 5))
 		shared = PCIE_XPCS_2G5;
 
 	return xpcs->ops->init(&xpcs->phys[id], dev, id, base,

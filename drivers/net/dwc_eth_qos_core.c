@@ -40,6 +40,8 @@
 #endif
 #include <env.h>
 #include <asm/io.h>
+#include <miiphy.h>
+#include <dm/pinctrl.h>
 
 #include <dm/platform_data/dwc_eth_qos_dm.h>
 
@@ -450,8 +452,8 @@ static int eqos_start(struct udevice *dev)
 	eqos->tx_desc_idx = 0;
 	eqos->rx_desc_idx = 0;
 
-	if (!eqos->phy_addr)
-		eqos->phy_addr = eqos->config->config_phy_addr;
+//	if (!eqos->phy_addr)
+//		eqos->phy_addr = eqos->config->config_phy_addr;
 
 	ret = eqos->config->ops->eqos_start_clks(dev);
 	if (ret < 0) {
@@ -1096,6 +1098,13 @@ static int eqos_probe(struct udevice *dev)
 
 	eqos->dev = dev;
 
+	/*
+	 * Set PHY address to an invalid value in order
+	 * to mark this address as not set.
+	 * Anyway, 0 (zero) is a legal value for an address.
+	 */
+	eqos->phy_addr = ~0;
+
 	eqos->config = pdata->config;
 	if (!eqos->config) {
 		pr_err("invalid config!\n");
@@ -1132,30 +1141,46 @@ static int eqos_probe(struct udevice *dev)
 		goto err_remove_resources_core;
 	}
 
-	eqos->mii = mdio_alloc();
-	if (!eqos->mii) {
-		pr_err("mdio_alloc() failed");
-		ret = -ENOMEM;
-		goto err_remove_resources;
-	}
-	eqos->mii->read = eqos_mdio_read;
-	eqos->mii->write = eqos_mdio_write;
-	eqos->mii->priv = eqos;
-	strcpy(eqos->mii->name, dev->name);
+	{
+		ofnode child;
+		ofnode_for_each_available_compatible_child(child,
+				dev->node, "snps,dwmac-mdio") {
+			eqos->mii = mdio_alloc();
+			if (!eqos->mii) {
+				pr_err("mdio_alloc() failed");
+				ret = -ENOMEM;
+				goto err_remove_resources;
+			}
+			pinctrl_select_state(dev, "gmac_mdio");
+			eqos->mii->read = eqos_mdio_read;
+			eqos->mii->write = eqos_mdio_write;
+			eqos->mii->priv = eqos;
+			strncpy(eqos->mii->name,
+					ofnode_get_name(child), MDIO_NAME_LEN);
+			eqos->mii->name[MDIO_NAME_LEN-1] = '\0';
 
-	ret = mdio_register(eqos->mii);
-	if (ret < 0) {
-		pr_err("mdio_register() failed: %d", ret);
-		goto err_free_mdio;
+			ret = mdio_register(eqos->mii);
+			if (ret < 0) {
+				pr_err("mdio_register() failed: %d", ret);
+				goto err_free_mdio;
+			}
+		}
 	}
 
 	/* Try to sync ethaddr to environment */
 	int idx = eqos_num(dev);
-	u8 enetaddr[6];
 
+#if CONFIG_IS_ENABLED(MICROSYS_MPXS32G274AR2) \
+	|| CONFIG_IS_ENABLED(MICROSYS_MPXS32G274AR3) \
+	|| CONFIG_IS_ENABLED(MICROSYS_MPXS32G274AR5) \
+	|| CONFIG_IS_ENABLED(MICROSYS_MPXS32G399AR3)
+	eth_env_get_enetaddr_by_index("eth", idx, pdata->eth.enetaddr);
+#else
+	u8 enetaddr[ARP_HLEN];
 	if (!eth_env_get_enetaddr_by_index("eth", idx, enetaddr) &&
 	    is_valid_ethaddr(pdata->eth.enetaddr))
 		eth_env_set_enetaddr_by_index("eth", idx, pdata->eth.enetaddr);
+#endif
 
 	debug("%s: OK\n", __func__);
 	return 0;
@@ -1177,8 +1202,8 @@ static int eqos_remove(struct udevice *dev)
 
 	debug("%s(dev=%p):\n", __func__, dev);
 
-	mdio_unregister(eqos->mii);
-	mdio_free(eqos->mii);
+//	mdio_unregister(eqos->mii);
+//	mdio_free(eqos->mii);
 	eqos->config->ops->eqos_remove_resources(dev);
 
 	eqos_remove_resources_core(dev);

@@ -1,6 +1,10 @@
 /* SPDX-License-Identifier: GPL-2.0+ */
 /*
  * Copyright (c) 2014 Google, Inc
+ *
+ * Copyright (C) 2019 MicroSys Electronics GmbH
+ *   Implemented i2c_eeprom_std_write(). Parameters are
+ *   read from the devicetree.
  */
 
 #ifndef __I2C_EEPROM
@@ -20,6 +24,8 @@ struct i2c_eeprom {
 	unsigned pagewidth;
 	/* The EEPROM's capacity in bytes */
 	unsigned long size;
+	/* The EEPROM's page write delay in microseconds */
+	unsigned long page_write_delay;
 };
 
 /*
