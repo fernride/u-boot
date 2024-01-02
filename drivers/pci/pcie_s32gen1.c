@@ -1281,7 +1281,8 @@ static void show_pci_devices(struct udevice *bus, struct udevice *dev,
 	pplat = dev_get_parent_platdata(dev);
 	printf("%02x:%02x.%02x", bus->seq,
 	       PCI_DEV(pplat->devfn), PCI_FUNC(pplat->devfn));
-	parsed_bus[bus->seq] = true;
+	if (bus->seq >= 0 && bus->seq < PCI_MAX_BUS_NUM)
+		parsed_bus[bus->seq] = true;
 
 	for (i = (PCIE_ALIGNMENT - depth); i > 0; i--)
 		printf("    ");
@@ -1333,7 +1334,7 @@ void show_pcie_devices(void)
 			int depth = pci_get_depth(dev);
 			int is_last = list_is_last(&dev->sibling_node,
 					&bus->child_head);
-			if (dev->seq < 0)
+			if (dev->seq < 0 || dev->seq >= PCI_MAX_BUS_NUM)
 				continue;
 			show_pci_devices(bus, dev, depth - 3,
 					is_last, parsed_bus);

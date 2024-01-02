@@ -38,6 +38,20 @@ config TARGET_S32G399AEMU
 	bool "Support S32G399A ZeBu"
 	select TARGET_TYPE_S32GEN1_EMULATOR
 
+config TARGET_S32G399AR3SBC2
+	bool "MicroSys S32G399AR3SBC2 board"
+	select MICROSYS_MPXS32G399AR3
+	select MICROSYS_CRXS32GR2
+	help
+		S32G399AR3SBC Revision 2
+
+config TARGET_S32G399AR3SBC3
+	bool "MicroSys S32G399AR3SBC3 board"
+	select MICROSYS_MPXS32G399AR3
+	select MICROSYS_CRXS32GR3
+	help
+		S32G399AR3SBC Revision 3
+
 endchoice
 
 config FSL_PFENG
@@ -51,5 +65,8 @@ source "board/nxp/s32g399ardb3/Kconfig"
 source "board/nxp/s32g3xxaevb/Kconfig"
 source "board/nxp/s32g3xxaevb3/Kconfig"
 source "board/nxp/s32g399aemu/Kconfig"
+source "board/microsys/mpxs32g399ar3/Kconfig"
+source "board/microsys/s32g399ar3sbc2/Kconfig"
+source "board/microsys/s32g399ar3sbc3/Kconfig"
 
 endif

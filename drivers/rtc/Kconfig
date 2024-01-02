@@ -85,6 +85,17 @@ config RTC_RV3029
 	  This driver supports reading and writing the RTC/calendar and the
 	  battery-baced SRAM section.
 
+config RTC_RV3028
+	bool "Enable RV3028 driver"
+	depends on DM_RTC
+	depends on OF_CONTROL
+	help
+	  The MicroCrystal RV3028 is a I2C Real Time Clock (RTC) with 8-byte
+	  battery-backed SRAM.
+
+	  This driver supports reading and writing the RTC/calendar and the
+	  battery-baced SRAM section.
+
 config RTC_RV8803
 	bool "Enable RV8803 driver"
 	depends on DM_RTC

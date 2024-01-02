@@ -10,8 +10,16 @@
 #include <command.h>
 #include <env.h>
 #include <i2c.h>
+#include <init.h>
 #include <linux/ctype.h>
+#include <linux/delay.h>
 #include <u-boot/crc.h>
+#include <net.h>
+#include "pfeng/pfeng.h"
+
+#ifdef CONFIG_DM_I2C
+#include <i2c_eeprom.h>
+#endif
 
 #ifdef CONFIG_SYS_I2C_EEPROM_CCID
 #include "../common/eeprom.h"
@@ -21,11 +29,18 @@
 #ifdef CONFIG_SYS_I2C_EEPROM_NXID
 /* some boards with non-256-bytes EEPROM have special define */
 /* for MAX_NUM_PORTS in board-specific file */
+#ifdef CONFIG_SYS_I2C_EEPROM_NXID_MAC
+#define MAX_NUM_PORTS CONFIG_SYS_I2C_EEPROM_NXID_MAC
+#endif
 #ifndef MAX_NUM_PORTS
 #define MAX_NUM_PORTS	16
 #endif
 #define NXID_VERSION	1
 #endif
+
+#define SERIALNO_NAME     "serial#"
+#define BOARDVERSION_NAME "board_version"
+#define PRODUCTINFO_NAME  "product_info"
 
 /**
  * static eeprom: EEPROM layout for CCID or NXID formats
@@ -59,8 +74,19 @@ static struct __attribute__ ((__packed__)) eeprom {
 	u8 res_1[21];     /* 0x2b - 0x3f Reserved */
 	u8 mac_count;     /* 0x40        Number of MAC addresses */
 	u8 mac_flag;      /* 0x41        MAC table flags */
-	u8 mac[MAX_NUM_PORTS][6];     /* 0x42 - 0xa1 MAC addresses */
-	u8 res_2[90];     /* 0xa2 - 0xfb Reserved */	
+	u8 mac[MAX_NUM_PORTS][ARP_HLEN];     /* 0x42 - 0xa1 MAC addresses */
+	/*
+	 * Wish to have board version in EEPROM.
+	 * @see Redmine #4505
+	 */
+	u8 board_version[16];
+	/*
+	 * Wish to store additional product related
+	 * information in EEPROM.
+	 * @see Redmine #4875
+	 */
+	u8 product_info[64];
+	u8 res_2[90-16-64];     /* 0xa2 - 0xfb Reserved */
 	u32 crc;          /* 0xfc - 0xff CRC32 checksum */
 #endif
 } e;
@@ -113,6 +139,13 @@ static void show_eeprom(void)
 		e.date[0], e.date[1], e.date[2],
 		e.date[3] & 0x7F, e.date[4], e.date[5],
 		e.date[3] & 0x80 ? "PM" : "");
+
+#ifdef CONFIG_SYS_I2C_EEPROM_NXID
+	/* Board version */
+	printf("Board version: %s\n", e.board_version);
+	/* product information */
+	printf("Product information: %s\n", e.product_info);
+#endif
 
 	/* Show MAC addresses  */
 	for (i = 0; i < min(e.mac_count, (u8)MAX_NUM_PORTS); i++) {
@@ -173,18 +206,32 @@ static int read_eeprom(void)
 	struct udevice *dev;
 #ifdef CONFIG_SYS_EEPROM_BUS_NUM
 	ret = i2c_get_chip_for_busnum(CONFIG_SYS_EEPROM_BUS_NUM,
-				      CONFIG_SYS_I2C_EEPROM_ADDR, 1, &dev);
+				      CONFIG_SYS_I2C_EEPROM_ADDR,
+				      CONFIG_SYS_I2C_EEPROM_ADDR_LEN, &dev);
 #else
-	ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR, 1, &dev);
+	ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR,
+				      CONFIG_SYS_I2C_EEPROM_ADDR_LEN, &dev);
 #endif
 	if (!ret)
-		ret = dm_i2c_read(dev, 0, (void *)&e, sizeof(e));
+		ret = i2c_eeprom_read(dev, 0, (void *)&e, sizeof(e));
 #endif
 
 #ifdef CONFIG_SYS_EEPROM_BUS_NUM
 #ifndef CONFIG_DM_I2C
 	i2c_set_bus_num(bus);
 #endif
+#endif
+
+	/*
+	 * Check if SN and Errata field are defined. If not set the length of
+	 * the string to 0.
+	 */
+	if (e.sn[0] == 0xff) e.sn[0] = 0;
+	if (e.errata[0] == 0xff) e.errata[0] = 0;
+#ifdef CONFIG_SYS_I2C_EEPROM_NXID
+	if (e.board_version[0] == 0xff) e.board_version[0] = 0;
+	if (e.product_info[0] == 0xff)
+		e.product_info[0] = 0;
 #endif
 
 #ifdef DEBUG
@@ -250,6 +297,9 @@ static int prog_eeprom(void)
 		ret = i2c_write(CONFIG_SYS_I2C_EEPROM_ADDR, i,
 				CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
 				p, min((int)(sizeof(e) - i), 8));
+		if (ret)
+			break;
+		udelay(5000);	/* 5ms write cycle timing */
 #else
 		struct udevice *dev;
 #ifdef CONFIG_SYS_EEPROM_BUS_NUM
@@ -263,8 +313,7 @@ static int prog_eeprom(void)
 					      &dev);
 #endif
 		if (!ret)
-			ret = dm_i2c_write(dev, i, p, min((int)(sizeof(e) - i),
-							  8));
+			ret = i2c_eeprom_write(dev, i, p, min((int)(sizeof(e) - i), 8));
 #endif
 		if (ret)
 			break;
@@ -292,7 +341,7 @@ static int prog_eeprom(void)
 					      &dev);
 #endif
 		if (!ret)
-			ret = dm_i2c_read(dev, 0, (void *)&e2, sizeof(e2));
+			ret = i2c_eeprom_read(dev, 0, (void *)&e2, sizeof(e2));
 #endif
 		if (!ret && memcmp(&e, &e2, sizeof(e)))
 			ret = -1;
@@ -434,6 +483,18 @@ int do_mac(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		strncpy((char *)e.sn, argv[2], sizeof(e.sn) - 1);
 		update_crc();
 		break;
+#ifdef CONFIG_SYS_I2C_EEPROM_NXID
+	case 'b':	/* board version */
+		memset(e.board_version, 0, sizeof(e.board_version));
+		strncpy((char *)e.board_version, argv[2], sizeof(e.board_version) - 1);
+		update_crc();
+		break;
+	case 'a':	/* product info area */
+		memset(e.product_info, 0, sizeof(e.product_info));
+		strncpy((char *)e.product_info, argv[2], sizeof(e.product_info) - 1);
+		update_crc();
+		break;
+#endif
 	case 'e':	/* errata */
 #ifdef CONFIG_SYS_I2C_EEPROM_NXID
 		memset(e.errata, 0, 5);
@@ -512,6 +573,13 @@ int mac_read_from_eeprom(void)
 		return 0;
 	}
 
+	env_set(SERIALNO_NAME, (char*) e.sn);
+
+#ifdef CONFIG_SYS_I2C_EEPROM_NXID
+	env_set(BOARDVERSION_NAME, (char*) e.board_version);
+	env_set(PRODUCTINFO_NAME, (char*) e.product_info);
+#endif
+
 #ifdef CONFIG_SYS_I2C_EEPROM_NXID
 	/*
 	 * MAC address #9 in v1 occupies the same position as the CRC in v0.
@@ -519,7 +587,7 @@ int mac_read_from_eeprom(void)
 	 * update the CRC later.
 	 */
 	if (e.version == 0)
-		memset(e.mac[8], 0xff, 6);
+		memset(e.mac[MAX_NUM_PORTS-1], 0xff, 6);
 #endif
 
 	for (i = 0; i < min(e.mac_count, (u8)MAX_NUM_PORTS); i++) {
@@ -595,6 +663,7 @@ unsigned int get_cpu_board_revision(void)
 		(void *)&be, sizeof(be));
 #else
 	struct udevice *dev;
+	int ret;
 #ifdef CONFIG_SYS_EEPROM_BUS_NUM
 	ret = i2c_get_chip_for_busnum(CONFIG_SYS_EEPROM_BUS_NUM,
 				      CONFIG_SYS_I2C_EEPROM_ADDR,
@@ -603,7 +672,7 @@ unsigned int get_cpu_board_revision(void)
 #else
 	ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR,
 				      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-				      &dev)
+				      &dev);
 #endif
 	if (!ret)
 		dm_i2c_read(dev, 0, (void *)&be, sizeof(be));
@@ -618,3 +687,86 @@ unsigned int get_cpu_board_revision(void)
 	return MPC85XX_CPU_BOARD_REV(be.major, be.minor);
 }
 #endif
+
+/*
+ * fix_eeprom_mac_addresses()
+ *
+ * Programs MAC-addresses from environment into the EEPROM if the EEPROM
+ * has not been initialized before.
+ * Background is that there are boards with no valid EEPROM but with environment
+ * variables 'ethaddr', etc., that contains the MAC-addresses instead. This is
+ * mainly valid for boards that have been produced with a BSP-version older than
+ * BSP32.0-5.0.3
+ *
+ * @return 0 on success
+ */
+int fix_eeprom_mac_addresses(void)
+{
+	uchar ea[ARP_HLEN];
+	char *var;
+	int i;
+
+	if (read_eeprom())
+		return 1;
+
+	/*
+	 * If the EEPROM is valid we assume that there are valid
+	 * MAC-addresses stored in it. Return with ok.
+	 */
+	if (is_valid)
+		return 0;
+
+#ifdef CONFIG_SYS_I2C_EEPROM_NXID
+		memcpy(e.id, "NXID", sizeof(e.id));
+		e.version = cpu_to_be32(NXID_VERSION);
+#else
+		memcpy(e.id, "CCID", sizeof(e.id));
+#endif
+
+	e.mac_count = MAX_NUM_PORTS;
+
+	/*
+	 * EEPROM is invalid => no valid MAC-addresses programmed.
+	 * Now check if there are MAC-addresses in the environment.
+	 */
+
+	// GMAC0:
+	if (eth_env_get_enetaddr_by_index("eth", 0, ea)) {
+		memcpy(&(e.mac[0][0]), &ea[0], ARP_HLEN);
+	}
+
+	// PFE0,1,2:
+	for (i=0; i < PFENG_EMACS_COUNT; i++) {
+		if (eth_env_get_enetaddr_by_index("pfe", i, ea)) {
+			memcpy(&(e.mac[i+1][0]), &ea[0], ARP_HLEN);
+		}
+		else if (eth_env_get_enetaddr_by_index("eth", i+1, ea)) {
+			memcpy(&(e.mac[i+1][0]), &ea[0], ARP_HLEN);
+		}
+	}
+
+	// Save serial number:
+	var = env_get(SERIALNO_NAME);
+	if (var) {
+		memset(e.sn, 0, sizeof(e.sn));
+		strncpy((char *)e.sn, var, sizeof(e.sn) - 1);
+	}
+
+	// Save board version:
+	var = env_get(BOARDVERSION_NAME);
+	if (var) {
+		memset(e.board_version, 0, sizeof(e.board_version));
+		strncpy((char *)e.board_version, var, sizeof(e.board_version) - 1);
+	}
+
+	// Save product information:
+	var = env_get(PRODUCTINFO_NAME);
+	if (var) {
+		memset(e.product_info, 0, sizeof(e.product_info));
+		strncpy((char *)e.product_info, var, sizeof(e.product_info) - 1);
+	}
+
+	update_crc();
+
+	return prog_eeprom();
+}

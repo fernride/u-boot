@@ -36,7 +36,7 @@ bool s32_serdes_is_combo_mode_enabled_in_hwconfig(unsigned int id)
 	return IS_SERDES_PCIE(ss_mode) && IS_SERDES_XPCS(ss_mode);
 }
 
-bool s32_serdes_is_hwconfig_instance_enabled(unsigned int id)
+__weak bool s32_serdes_is_hwconfig_instance_enabled(unsigned int id)
 {
 	char serdes_name[SERDES_NAME_SIZE];
 	const char *arg;
@@ -96,7 +96,6 @@ char *s32_serdes_get_pcie_hwconfig_subarg(unsigned int id,
 	return subarg_str;
 }
 
-static inline
 char *s32_serdes_get_serdes_hwconfig_subarg(unsigned int id,
 					    const char *subarg,
 					    size_t *subarg_len)
@@ -187,7 +186,7 @@ char *s32_serdes_get_xpcs_hwconfig_subarg(unsigned int serdes_id,
 	return subarg_str;
 }
 
-enum pcie_type s32_serdes_get_pcie_type_from_hwconfig(unsigned int id)
+__weak enum pcie_type s32_serdes_get_pcie_type_from_hwconfig(unsigned int id)
 {
 	enum pcie_type pcietype = PCIE_INVALID;
 	size_t subarg_len = 0;
@@ -231,7 +230,7 @@ bool s32_serdes_get_skip_from_hwconfig(unsigned int id)
 	return skip;
 }
 
-int s32_serdes_get_xpcs_speed_from_hwconfig(unsigned int serdes_id,
+__weak int s32_serdes_get_xpcs_speed_from_hwconfig(unsigned int serdes_id,
 					    unsigned int xpcs_id)
 {
 	/* Set default mode to invalid to force configuration */
@@ -276,7 +275,7 @@ int s32_serdes_get_xpcs_speed_from_hwconfig(unsigned int serdes_id,
 	return speed;
 }
 
-enum serdes_xpcs_mode s32_serdes_get_xpcs_cfg_from_hwconfig(
+__weak enum serdes_xpcs_mode s32_serdes_get_xpcs_cfg_from_hwconfig(
 	unsigned int serdes_id, unsigned int xpcs_id)
 {
 	/* Set default mode to invalid to force configuration */
@@ -298,7 +297,7 @@ enum serdes_xpcs_mode s32_serdes_get_xpcs_cfg_from_hwconfig(
 	return xpcs_mode;
 }
 
-bool s32_serdes_is_external_clk_in_hwconfig(unsigned int id)
+__weak bool s32_serdes_is_external_clk_in_hwconfig(unsigned int id)
 {
 	size_t subarg_len = 0;
 	bool ext = false;
@@ -315,7 +314,7 @@ bool s32_serdes_is_external_clk_in_hwconfig(unsigned int id)
 	return ext;
 }
 
-unsigned long s32_serdes_get_clock_fmhz_from_hwconfig(unsigned int id)
+__weak unsigned long s32_serdes_get_clock_fmhz_from_hwconfig(unsigned int id)
 {
 	size_t subarg_len = 0;
 	unsigned long fmhz = MHZ_100;
@@ -351,7 +350,7 @@ enum pcie_phy_mode s32_serdes_get_pcie_phy_mode_from_hwconfig(unsigned int id)
 	return phy_mode;
 }
 
-enum serdes_mode s32_serdes_get_serdes_mode_from_hwconfig(unsigned int id)
+__weak enum serdes_mode s32_serdes_get_serdes_mode_from_hwconfig(unsigned int id)
 {
 	size_t subarg_len = 0;
 	char *option_str = s32_serdes_get_serdes_hwconfig_subarg(id, "mode",

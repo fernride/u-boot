@@ -734,7 +734,12 @@ int __weak get_phy_id(struct mii_dev *bus, int addr, int devad, u32 *phy_id)
 
 	*phy_id |= (phy_reg & 0xffff);
 
-	return 0;
+	/*
+	 * Not every MDIO controller returns with an error when the access
+	 * did not succeed. To cover this we assume that a PHYID can never
+	 * be 0x00000000 or 0xffffffff:
+	 */
+	return ((*phy_id != 0) && (*phy_id != 0xffffffff)) ? 0 : -EIO;
 }
 
 static struct phy_device *create_phy_by_mask(struct mii_dev *bus,
@@ -846,7 +851,7 @@ int phy_reset(struct phy_device *phydev)
 
 #ifdef CONFIG_PHYLIB_10G
 	/* If it's 10G, we need to issue reset through one of the MMDs */
-	if (is_10g_interface(phydev->interface)) {
+	if (is_10g_interface(phydev->interface) || phydev->is_c45) {
 		if (!phydev->mmds)
 			gen10g_discover_mmds(phydev);
 

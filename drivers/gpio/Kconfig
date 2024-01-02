@@ -453,4 +453,11 @@ config SCMI_GPIO
 	  by a SCMI agent based on SCMI GPIO protocol communication
 	  with a SCMI server.
 
+config FXL6408_GPIO
+    bool "FXL6408 I2C GPIO expander"
+    depends on DM_GPIO && OF_CONTROL
+    help
+      This option enables support for 8 GPIOs found
+      on the Fairchild Semiconductor FXL6408.
+
 endmenu

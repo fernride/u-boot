@@ -12,7 +12,7 @@ extern int do_mac(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]);
 U_BOOT_CMD(
 	mac, 3, 1,  do_mac,
 	"display and program the system ID and MAC addresses in EEPROM",
-	"[read|save|id|num|errata|date|ports|port_number]\n"
+	"[read|save|id|num|errata|date|ports|port_number|board|area]\n"
 	"mac read\n"
 	"    - read EEPROM content into memory data structure\n"
 	"mac save\n"
@@ -28,5 +28,9 @@ U_BOOT_CMD(
 	"mac ports N\n"
 	"    - program the number of network ports to integer N\n"
 	"mac X string\n"
-	"    - program MAC addr for port X [X=0,1..] to colon separated string"
+	"    - program MAC addr for port X [X=0,1..] to colon separated string\n"
+	"mac board string\n"
+	"    - program board version to value string\n"
+	"mac area string\n"
+	"    - program product info area to value string\n"
 );

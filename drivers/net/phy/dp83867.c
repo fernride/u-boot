@@ -104,6 +104,19 @@
 
 /* SGMIICTL bits */
 #define DP83867_SGMII_TYPE			BIT(14)
+#define DP83867_STRAP_MIRROR_EN BIT(15)
+
+/*
+ * RX/TX delay in pico-seconds and in steps of
+ * 250ps. The range is from 250ps to 4000ps.
+ */
+#define RXTX_DELAY_PS(PS) ((((PS)/250)-1)&0xf)
+
+#define CFG4_SGMII_AUTONEG_TIMER_MASK (3<<5)
+#define SGMII_AUTONEG_TIMER_16MS      (0<<5)
+#define SGMII_AUTONEG_TIMER_2us       (1<<5)
+#define SGMII_AUTONEG_TIMER_800us     (2<<5)
+#define SGMII_AUTONEG_TIMER_11MS      (3<<5)
 
 enum {
 	DP83867_PORT_MIRRORING_KEEP,
@@ -121,6 +134,7 @@ struct dp83867_private {
 	bool set_clk_output;
 	unsigned int clk_output_sel;
 	bool sgmii_ref_clk_en;
+	bool sgmii_an_enabled;
 };
 
 static int dp83867_config_port_mirroring(struct phy_device *phydev)
@@ -244,6 +258,9 @@ static int dp83867_of_init(struct phy_device *phydev)
 	if (ofnode_read_bool(node, "ti,sgmii-ref-clock-output-enable"))
 		dp83867->sgmii_ref_clk_en = true;
 
+	if (ofnode_read_bool(node, "ti,sgmii-an-disable"))
+		dp83867->sgmii_an_enabled = false;
+
 	return 0;
 }
 #else
@@ -255,6 +272,9 @@ static int dp83867_of_init(struct phy_device *phydev)
 	dp83867->tx_id_delay = DP83867_RGMIIDCTL_2_75_NS;
 	dp83867->fifo_depth = DEFAULT_FIFO_DEPTH;
 	dp83867->io_impedance = -EINVAL;
+
+	dp83867->rxctrl_strap_quirk = true;
+	dp83867->sgmii_an_enabled = true;
 
 	return 0;
 }
@@ -281,7 +301,10 @@ static int dp83867_config(struct phy_device *phydev)
 	if (dp83867->rxctrl_strap_quirk) {
 		val = phy_read_mmd(phydev, DP83867_DEVADDR,
 				   DP83867_CFG4);
+	    if (val & BIT(7))
 		val &= ~BIT(7);
+	    val &= ~CFG4_SGMII_AUTONEG_TIMER_MASK; // mask SGMII_AUTONEG_TIMER[6:5]
+	    val |= SGMII_AUTONEG_TIMER_11MS;       // set timer duration to 11ms
 		phy_write_mmd(phydev, DP83867_DEVADDR,
 			      DP83867_CFG4, val);
 	}
@@ -306,9 +329,16 @@ static int dp83867_config(struct phy_device *phydev)
 		 * register's bit 11 (marked as RESERVED).
 		 */
 
-		bs = phy_read_mmd(phydev, DP83867_DEVADDR, DP83867_STRAP_STS1);
-		if (bs & DP83867_STRAP_STS1_RESERVED)
+		bs = phy_read_mmd(phydev, DP83867_DEVADDR,
+				  DP83867_STRAP_STS1);
+
+		if (bs & DP83867_STRAP_MIRROR_EN)
+		    dp83867->port_mirroring = DP83867_PORT_MIRRORING_EN;
+
+		if (bs & DP83867_STRAP_STS1_RESERVED) {
+			val = phy_read(phydev, MDIO_DEVAD_NONE, MII_DP83867_PHYCTRL);
 			val &= ~DP83867_PHYCR_RESERVED_MASK;
+		}
 
 		ret = phy_write(phydev, MDIO_DEVAD_NONE,
 				MII_DP83867_PHYCTRL, val);
@@ -353,6 +383,10 @@ static int dp83867_config(struct phy_device *phydev)
 			 MII_DP83867_CFG2_SPEEDOPT_ENH |
 			 MII_DP83867_CFG2_SPEEDOPT_CNT |
 			 MII_DP83867_CFG2_SPEEDOPT_INTLOW);
+		if (dp83867->sgmii_an_enabled)
+			cfg2 |= MII_DP83867_CFG2_SGMII_AUTONEGEN;
+		else
+			cfg2 &= ~MII_DP83867_CFG2_SGMII_AUTONEGEN;
 		phy_write(phydev, MDIO_DEVAD_NONE, MII_DP83867_CFG2, cfg2);
 
 		phy_write_mmd(phydev, DP83867_DEVADDR,
@@ -412,6 +446,8 @@ static int dp83867_probe(struct phy_device *phydev)
 	dp83867 = kzalloc(sizeof(*dp83867), GFP_KERNEL);
 	if (!dp83867)
 		return -ENOMEM;
+
+	dp83867->sgmii_an_enabled = true;
 
 	phydev->priv = dp83867;
 	return 0;

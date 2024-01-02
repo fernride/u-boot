@@ -10,6 +10,7 @@
 #include <miiphy.h>
 #include <dm/device-internal.h>
 #include <dm/device_compat.h>
+#include <dm/of_extra.h>
 #include <dm/uclass-internal.h>
 #include <linux/compat.h>
 
@@ -152,7 +153,7 @@ static struct phy_device *dm_eth_connect_phy_handle(struct udevice *ethdev,
 			break;
 
 	if (!ofnode_valid(phandle.node)) {
-		dev_dbg(dev, "can't find PHY node\n");
+		dev_dbg(ethdev, "can't find PHY node\n");
 		return NULL;
 	}
 
@@ -165,16 +166,33 @@ static struct phy_device *dm_eth_connect_phy_handle(struct udevice *ethdev,
 		return NULL;
 	}
 
+	{
+	    struct udevice *dev;
+	    ofnode n = phandle.node;
+
+	    while (ofnode_valid(n)) {
+	        if (!device_get_global_by_ofnode(n, &dev)) {
+	            device_probe(dev);
+	            break;
+	        }
+	        else {
+	            dev_dbg(ethdev, "can't find device for %s!\n", ofnode_get_name(n));
+	        }
+	        n = ofnode_get_parent(n);
+	    }
+	}
+
 	if (uclass_get_device_by_ofnode(UCLASS_MDIO,
 					ofnode_get_parent(phandle.node),
 					&mdiodev)) {
-		dev_dbg(dev, "can't find MDIO bus for node %s\n",
+		dev_dbg(ethdev, "can't find MDIO bus for node %s\n",
 			ofnode_get_name(ofnode_get_parent(phandle.node)));
 		return NULL;
 	}
 
 	phy = dm_mdio_phy_connect(mdiodev, phy_addr, ethdev, interface);
 
+out:
 	if (phy)
 		phy->node = phandle.node;
 

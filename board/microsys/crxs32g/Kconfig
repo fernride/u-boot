@@ -1,0 +1,28 @@
+# Copyright (C) 2023 MicroSys Electronics GmbH
+
+menu "MicroSys Carrier"
+
+choice
+    prompt "Carrier Board CRX for S32G"
+    default MICROSYS_CRXS32GR2
+
+config MICROSYS_CRX_NONE
+	bool "CRX carrier-less configuration"
+
+config MICROSYS_CRXS32GR2
+	bool "CRX-S32G Carrier Board Rev. 2"
+	imply NVME
+	imply RGMII
+	imply PHY_MARVELL
+	select ADC
+
+config MICROSYS_CRXS32GR3
+	bool "CRX-S32G Carrier Board Rev. 3"
+	imply NVME
+	imply RGMII
+	imply PHY_MARVELL
+	select ADC
+
+endchoice
+
+endmenu

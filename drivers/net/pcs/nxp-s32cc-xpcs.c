@@ -851,9 +851,10 @@ static int xpcs_init_plls(struct s32cc_xpcs *xpcs)
 	int ret;
 	__maybe_unused struct udevice *dev = get_xpcs_device(xpcs);
 
-	if (!xpcs->ext_clk) {
+	if (!xpcs->ext_clk)
 		XPCS_WRITE_BITS(xpcs, VR_MII_DIG_CTRL1, BYP_PWRUP, BYP_PWRUP);
-	} else if (xpcs->pcie_shared == NOT_SHARED) {
+
+	if (xpcs->pcie_shared == NOT_SHARED) {
 		wait_power_good_state(xpcs);
 	} else if (xpcs->pcie_shared == PCIE_XPCS_2G5) {
 		wait_power_good_state(xpcs);
