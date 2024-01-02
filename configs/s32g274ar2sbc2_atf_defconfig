@@ -1533,3 +1533,5 @@ CONFIG_EFI_PLATFORM_LANG_CODES="en-US"
 # CONFIG_EFI_LOAD_FILE2_INITRD is not set
 # CONFIG_TEST_FDTDEC is not set
 # CONFIG_UNIT_TEST is not set
+CONFIG_NXP_HSE_SUPPORT=y
+CONFIG_NXP_HSE_FW_FILE="/home/rturkin/projects/microsys-yocto-bsp36/build_s32g274ar2sbc2/tmp/work/s32g274ar2sbc2-ms-linux/u-boot-s32/2020.04-r0/recipe-sysroot/lib/firmware/s32cc_hse_fw.bin"
