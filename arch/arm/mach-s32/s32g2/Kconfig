@@ -59,6 +59,17 @@ config TARGET_S32G274AEMU
 	bool "Support S32G274A ZeBu"
 	select TARGET_TYPE_S32CC_EMULATOR
 
+config TARGET_S32G274AR2SBC2
+	bool "Support S32G274A R2SBC2 from MicroSys"
+	help
+	  This board is based on S32G274A R2SBC2 from MicroSys
+	#select NXP_S32GRDB_BOARD
+	imply PHY
+	imply PHYLIB
+	imply RGMII
+	imply SARADC_S32CC
+	imply PHY_MARVELL
+
 endchoice
 
 config NXP_PFENG
