@@ -9,6 +9,7 @@
 #include <dt-bindings/interrupt-controller/arm-gic.h>
 #include <dt-bindings/clock/s32cc-scmi-clock.h>
 #include <dt-bindings/misc/s32cc-fccu.h>
+#include <dt-bindings/nvmem/s32cc-gpr-nvmem.h>
 #include <dt-bindings/nvmem/s32cc-siul2-nvmem.h>
 #include <dt-bindings/nvmem/s32cc-ocotp-nvmem.h>
 #include <dt-bindings/perf/s32cc-scmi-perf.h>
@@ -37,7 +38,7 @@
 		clks = &clks;
 		reset = &reset;
 
-		gmac0 = &gmac0;
+		ethernet0 = &gmac0;
 
 		pci0 = &pcie0;
 		pci1 = &pcie1;
@@ -51,70 +52,18 @@
 		i2c3 = &i2c3;
 		i2c4 = &i2c4;
 
+		spi0 = &spi0;
+		spi1 = &spi1;
+		spi2 = &spi2;
+		spi3 = &spi3;
+		spi4 = &spi4;
+		spi5 = &spi5;
 		spi6 = &qspi;
 	};
 
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
-
-		cpu-map {
-			cluster0 {
-				core0 {
-					cpu = <&cpu0>;
-				};
-
-				core1 {
-					cpu = <&cpu1>;
-				};
-			};
-
-			cluster1 {
-				core0 {
-					cpu = <&cpu2>;
-				};
-
-				core1 {
-					cpu = <&cpu3>;
-				};
-			};
-		};
-
-		cpu0: cpu@0 {
-			device_type = "cpu";
-			compatible = "arm,cortex-a53";
-			reg = <0x0>;
-			enable-method = "psci";
-			clocks = <&dfs S32CC_SCMI_PERF_A53>;
-			next-level-cache = <&cluster0_l2_cache>;
-		};
-
-		cpu1: cpu@1 {
-			device_type = "cpu";
-			compatible = "arm,cortex-a53";
-			reg = <0x1>;
-			enable-method = "psci";
-			clocks = <&dfs S32CC_SCMI_PERF_A53>;
-			next-level-cache = <&cluster0_l2_cache>;
-		};
-
-		cpu2: cpu@100 {
-			device_type = "cpu";
-			compatible = "arm,cortex-a53";
-			reg = <0x100>;
-			enable-method = "psci";
-			clocks = <&dfs S32CC_SCMI_PERF_A53>;
-			next-level-cache = <&cluster1_l2_cache>;
-		};
-
-		cpu3: cpu@101 {
-			device_type = "cpu";
-			compatible = "arm,cortex-a53";
-			reg = <0x101>;
-			enable-method = "psci";
-			clocks = <&dfs S32CC_SCMI_PERF_A53>;
-			next-level-cache = <&cluster1_l2_cache>;
-		};
 
 		cluster0_l2_cache: l2-cache0 {
 			compatible = "cache";
@@ -219,6 +168,13 @@
 				reg = <0x16>;
 				#reset-cells = <1>;
 			};
+
+			pinctrl_scmi: protocol@80 {
+				reg = <0x80>;
+				#pinctrl-cells = <2>;
+
+				status = "disabled";
+			};
 		};
 
 		psci {
@@ -268,9 +224,21 @@
 			};
 		};
 
-		ddr_gpr: ddr_gpr@4007c600 {
-			compatible = "nxp,s32cc-ddr-gpr", "syscon";
-			reg = <0x0 0x4007c600 0x0 0x20>;
+		gpr: gpr@4007c000 {
+			compatible = "nxp,s32cc-gpr-nvmem";
+			reg = <0x0 0x4007c000 0x0 0x3000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			ddr_pmu_irq: ddr_pmu_irq@0 {
+				reg = <S32CC_GPR_DDR_PMU_IRQ_OFFSET
+					S32CC_GPR_CELL_SIZE>;
+			};
+			gmac0_phy_intf_sel: gmac0_phy_intf_sel@1 {
+				reg = <S32CC_GPR_GMAC0_PHY_INTF_SEL_OFFSET
+					S32CC_GPR_CELL_SIZE>;
+			};
 		};
 
 		siul2@4009c000 {
@@ -288,11 +256,14 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				status = "okay";
-				soc_revision: soc_revision@0 {
-					reg = <SOC_REVISION_OFFSET NVRAM_CELL_SIZE>;
+				soc_major: soc_major@0 {
+					reg = <SOC_MAJOR_OFFSET NVRAM_CELL_SIZE>;
 				};
-				pcie_variant: pcie_variant@4 {
-					reg = <PCIE_VARIANT_OFFSET NVRAM_CELL_SIZE>;
+				soc_minor: soc_minor@1 {
+					reg = <SOC_MINOR_OFFSET NVRAM_CELL_SIZE>;
+				};
+				pcie_dev_id: pcie_dev_id@2 {
+					reg = <PCIE_DEV_ID_OFFSET NVRAM_CELL_SIZE>;
 				};
 			};
 		};
@@ -309,12 +280,13 @@
 
 		tmu: tmu@400a8000 {
 			compatible = "nxp,s32cc-tmu";
+			#thermal-sensor-cells = <1>;
 			reg = <0x0 0x400a8000 0x0 0x3000>;
-			clocks = <&clks S32CC_SCMI_CLK_TMU_MODULE>,
-				<&clks S32CC_SCMI_CLK_TMU_REG>;
-			clock-names = "tmu_module", "tmu_reg";
+			clocks = <&clks S32CC_SCMI_CLK_TMU_MODULE>;
 			nvmem-cell-names = "tmu_fuse_val";
 			nvmem-cells = <&tmu_fuse_val>;
+			interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL_HIGH>;
+			little-endian;
 			status = "okay";
 		};
 
@@ -580,6 +552,8 @@
 			interrupts = <GIC_SPI 70 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clks S32CC_SCMI_CLK_SAR_ADC_BUS>;
 			clock-names = "adc";
+			dmas = <&edma0 0 32>;
+			dma-names = "rx";
 			vref = <1800>;
 			status = "okay";
 		};
@@ -870,6 +844,8 @@
 			interrupts = <GIC_SPI 71 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clks S32CC_SCMI_CLK_SAR_ADC_BUS>;
 			clock-names = "adc";
+			dmas = <&edma1 1 32>;
+			dma-names = "rx";
 			vref = <1800>;
 			status = "okay";
 		};
@@ -910,7 +886,7 @@
 			status = "disabled";
 			compatible = "nxp,s32cc-dwmac";
 			reg = <0x0 0x4033c000 0x0 0x2000>, /* gmac IP */
-			      <0x0 0x4007c004 0x0 0x4>;    /* S32 CTRL_STS reg */
+			      <0x0 0x4007c004 0x0 0x4>;    /* GMAC_0_CTRL_STS */
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-names = "macirq";
@@ -938,6 +914,8 @@
 				      "rx_sgmii", "rx_rgmii",
 				      "rx_rmii", "rx_mii",
 				      "ptp_ref";
+			nvmem-cell-names = "gmac_phy_intf_sel";
+			nvmem-cells = <&gmac0_phy_intf_sel>;
 
 			mtl_rx_setup_gmac0: rx-queues-config {
 				snps,rx-queues-to-use = <5>;
@@ -1000,6 +978,8 @@
 			reg = <0x0 0x403e0000 0x0 0x100>;
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL_HIGH>; /* GIC 147 */
+			nvmem-cells = <&ddr_pmu_irq>;
+			nvmem-cell-names = "ddr_pmu_irq";
 		};
 
 		pcie0: pcie@40400000 {
@@ -1060,8 +1040,8 @@
 			num-ib-windows = <6>;
 			num-ob-windows = <6>;
 
-			nvmem-cell-names = "serdes_presence", "pcie_variant";
-			nvmem-cells = <&serdes_presence>, <&pcie_variant>;
+			nvmem-cell-names = "serdes_presence", "pcie_dev_id";
+			nvmem-cells = <&serdes_presence>, <&pcie_dev_id>;
 
 			status = "disabled";
 		};
@@ -1126,8 +1106,8 @@
 			num-ib-windows = <6>;
 			num-ob-windows = <6>;
 
-			nvmem-cell-names = "serdes_presence", "pcie_variant";
-			nvmem-cells = <&serdes_presence>, <&pcie_variant>;
+			nvmem-cell-names = "serdes_presence", "pcie_dev_id";
+			nvmem-cells = <&serdes_presence>, <&pcie_dev_id>;
 
 			status = "disabled";
 		};

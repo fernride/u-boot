@@ -490,6 +490,8 @@ dtb-$(CONFIG_TARGET_TEN64) += fsl-ls1088a-ten64.dtb
 
 dtb-$(CONFIG_NXP_S32CC) += s32cc.dtb
 
+dtb-$(CONFIG_TARGET_S32G274ATTTECHN4) += s32g274atttechn4.dtb
+
 dtb-$(CONFIG_TARGET_DRAGONBOARD410C) += dragonboard410c.dtb
 dtb-$(CONFIG_TARGET_DRAGONBOARD820C) += dragonboard820c.dtb
 dtb-$(CONFIG_TARGET_STARQLTECHN) += starqltechn.dtb
