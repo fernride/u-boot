@@ -31,29 +31,30 @@
 
 serdes_t get_serdes_sel(void)
 {
-	uchar reg = 0xff;
+	// uchar reg = 0xff;
 
-	struct udevice *dev = NULL;
-	if (i2c_get_chip_for_busnum(1, 0x44, 1, &dev)==0) {
-		dm_i2c_read(dev, 0x5, &reg, 1);
-	}
+	// struct udevice *dev = NULL;
+	// if (i2c_get_chip_for_busnum(1, 0x44, 1, &dev)==0) {
+	// 	dm_i2c_read(dev, 0x5, &reg, 1);
+	// }
 
-	return (reg & 1) ? SERDES_M2 : SERDES_2G5;
+	// return (reg & 1) ? SERDES_M2 : SERDES_2G5;
+	return SERDES_2G5;
 }
 
 int set_serdes_sel(const serdes_t serdes_mode)
 {
-	uchar reg = 0xff;
+	// uchar reg = 0xff;
 
-	struct udevice *dev = NULL;
-	if (i2c_get_chip_for_busnum(1, 0x44, 1, &dev)==0) {
-		dm_i2c_read(dev, 0x5, &reg, 1);
-		if (serdes_mode == SERDES_2G5)
-			reg &= ~1;
-		else
-			reg |= 1;
-		dm_i2c_write(dev, 0x5, &reg, 1);
-	}
+	// struct udevice *dev = NULL;
+	// if (i2c_get_chip_for_busnum(1, 0x44, 1, &dev)==0) {
+	// 	dm_i2c_read(dev, 0x5, &reg, 1);
+	// 	if (serdes_mode == SERDES_2G5)
+	// 		reg &= ~1;
+	// 	else
+	// 		reg |= 1;
+	// 	dm_i2c_write(dev, 0x5, &reg, 1);
+	// }
 
 	return 0;
 }

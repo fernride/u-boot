@@ -10,8 +10,8 @@ config MICROSYS_MPXS32G274AR2
 	imply DM_PMIC
 	imply DM_PMIC_VR5510
 	imply NXP_S32CC_BOARD_COMMON
-	imply CMD_EEPROM
-	imply I2C_EEPROM
+	#imply CMD_EEPROM
+	#imply I2C_EEPROM
 	imply ADC
 	imply PHY
 	imply PHYLIB

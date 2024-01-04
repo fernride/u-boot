@@ -65,8 +65,5 @@ source "board/nxp/s32g399ardb3/Kconfig"
 source "board/nxp/s32g3xxaevb/Kconfig"
 source "board/nxp/s32g3xxaevb3/Kconfig"
 source "board/nxp/s32g399aemu/Kconfig"
-source "board/microsys/mpxs32g399ar3/Kconfig"
-source "board/microsys/s32g399ar3sbc2/Kconfig"
-source "board/microsys/s32g399ar3sbc3/Kconfig"
 
 endif

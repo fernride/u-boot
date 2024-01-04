@@ -124,14 +124,15 @@ __weak uint8_t get_board_rev(void)
 enum s32g_boot_media get_boot_media()
 {
 	enum s32g_boot_media media = S32G_BOOT_SD;
-	uint8_t boot_cfg0;
+	printf("get_boot_media(): boot target selection (eeprom @ 0x50) is not supported\n");
+	// uint8_t boot_cfg0;
 
-	struct udevice *dev = NULL;
-	if (i2c_get_chip_for_busnum(0, RCW_EEPROM_ADDR, 1, &dev)==0) {
-		if (dm_i2c_read(dev, 0x0, &boot_cfg0, 1)==0) {
-			media = (enum s32g_boot_media) ((boot_cfg0 >> 5) & 0x7);
-		}
-	}
+	// struct udevice *dev = NULL;
+	// if (i2c_get_chip_for_busnum(0, RCW_EEPROM_ADDR, 1, &dev)==0) {
+	// 	if (dm_i2c_read(dev, 0x0, &boot_cfg0, 1)==0) {
+	// 		media = (enum s32g_boot_media) ((boot_cfg0 >> 5) & 0x7);
+	// 	}
+	// }
 
 	return media;
 }

@@ -107,12 +107,6 @@ source "board/nxp/s32g2xxaevb3/Kconfig"
 source "board/nxp/s32g274abluebox3/Kconfig"
 source "board/nxp/s32g274aemu/Kconfig"
 source "board/microsys/mpxs32g274ar2/Kconfig"
-source "board/microsys/mpxs32g274ar3/Kconfig"
-source "board/microsys/mpxs32g274ar5/Kconfig"
 source "board/microsys/s32g274ar2sbc2/Kconfig"
-source "board/microsys/s32g274ar3sbc2/Kconfig"
-source "board/microsys/s32g274ar2sbc3/Kconfig"
-source "board/microsys/s32g274ar3sbc3/Kconfig"
-source "board/microsys/s32g274ar5sbc3/Kconfig"
 
 endif
