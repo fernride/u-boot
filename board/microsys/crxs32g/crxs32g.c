@@ -39,6 +39,7 @@ serdes_t get_serdes_sel(void)
 	// }
 
 	// return (reg & 1) ? SERDES_M2 : SERDES_2G5;
+	printf("serdes 2g5 sel called\n");
 	return SERDES_2G5;
 }
 

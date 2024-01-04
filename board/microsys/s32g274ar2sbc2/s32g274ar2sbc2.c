@@ -29,6 +29,7 @@ int last_stage_init(void)
 	fix_pfe_enetaddr();
 	fix_eeprom_mac_addresses();
 
+	printf("last stage init\n");
 	// GMAC0:
 	eth = eth_get_dev_by_name("eth_eqos");
 	bus = miiphy_get_dev_by_name("pfeng_emac_2");
@@ -46,6 +47,9 @@ int last_stage_init(void)
 		eqos->phy = phy;
 		eqos->phy_addr = GMAC_PHYADDR;
 		eqos->mii = bus;
+	}
+	else {
+		printf("eth eqos initialization failed %x %x\n", eth, bus);
 	}
 
 	// PFE1:
