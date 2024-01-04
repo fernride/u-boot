@@ -56,45 +56,48 @@ static uchar eeprom_dip = 0xff;
 
 int set_boot_cfg(const uchar reg)
 {
-	struct udevice *dev = NULL;
-	if (i2c_get_chip_for_busnum(0, 0x4d, 1, &dev)==0) {
-		dm_i2c_write(dev, 0, &reg, 1);
-		eeprom_dip = reg;
-	}
+	printf("eeprom slave 0x4d is unavailable, skipping\n");
+	// struct udevice *dev = NULL;
+	// if (i2c_get_chip_for_busnum(0, 0x4d, 1, &dev)==0) {
+	// 	dm_i2c_write(dev, 0, &reg, 1);
+	// 	eeprom_dip = reg;
+	// }
 
 	return 0;
 }
 
 uchar get_boot_cfg(const bool verbose)
 {
+	printf("eeprom slave 0x4d is unavailable, skipping\n");
+	// if (eeprom_dip == 0xff) {
+	// 	struct udevice *dev = NULL;
+	// 	if (i2c_get_chip_for_busnum(0, 0x4d, 1, &dev)==0) {
+	// 		dm_i2c_read(dev, 0, &eeprom_dip, 1);
+	// 		if (verbose) {
+	// 			printf("DIP EEPROM[%d]\n", 0);
+	// 			print_boot_cfg(eeprom_dip);
+	// 		}
+	// 	}
+	// }
 
-	if (eeprom_dip == 0xff) {
-		struct udevice *dev = NULL;
-		if (i2c_get_chip_for_busnum(0, 0x4d, 1, &dev)==0) {
-			dm_i2c_read(dev, 0, &eeprom_dip, 1);
-			if (verbose) {
-				printf("DIP EEPROM[%d]\n", 0);
-				print_boot_cfg(eeprom_dip);
-			}
-		}
-	}
-
-	return eeprom_dip;
+	// return eeprom_dip;
+	return 0xff;
 }
 
 uint8_t get_board_rev(void)
 {
-	struct udevice *dev = NULL;
+	// struct udevice *dev = NULL;
 	static uchar reg = 0xff;
 
-	if ((reg==0xff)
-		&& (i2c_get_chip_for_busnum(0, 0x43, 1, &dev)==0)) {
-		if (dm_i2c_read(dev, 0x0f, &reg, 1)==0) {
-			reg = (((reg&BIT(7))>>7)
-				| ((reg&BIT(6))>>5)
-				| ((reg&BIT(5))>>3)) + 1;
-		}
-	}
+	printf("eeprom slave 0x43 is unavailable, skipping\n");
+	// if ((reg==0xff)
+	// 	&& (i2c_get_chip_for_busnum(0, 0x43, 1, &dev)==0)) {
+	// 	if (dm_i2c_read(dev, 0x0f, &reg, 1)==0) {
+	// 		reg = (((reg&BIT(7))>>7)
+	// 			| ((reg&BIT(6))>>5)
+	// 			| ((reg&BIT(5))>>3)) + 1;
+	// 	}
+	// }
 
 	return reg;
 }
