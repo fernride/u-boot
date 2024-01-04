@@ -18,7 +18,7 @@
 #include "pfeng/pfeng.h"
 
 #ifdef CONFIG_DM_I2C
-#include <i2c_eeprom.h>
+// #include <i2c_eeprom.h>
 #endif
 
 #ifdef CONFIG_SYS_I2C_EEPROM_CCID
@@ -193,32 +193,32 @@ static int read_eeprom(void)
 
 #ifdef CONFIG_SYS_EEPROM_BUS_NUM
 #ifndef CONFIG_DM_I2C
-	bus = i2c_get_bus_num();
-	i2c_set_bus_num(CONFIG_SYS_EEPROM_BUS_NUM);
+	// bus = i2c_get_bus_num();
+	// i2c_set_bus_num(CONFIG_SYS_EEPROM_BUS_NUM);
 #endif
 #endif
 
 #ifndef CONFIG_DM_I2C
-	ret = i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, 0,
-		       CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-		       (void *)&e, sizeof(e));
+	// ret = i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, 0,
+	// 	       CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+	// 	       (void *)&e, sizeof(e));
 #else
-	struct udevice *dev;
+	// struct udevice *dev;
 #ifdef CONFIG_SYS_EEPROM_BUS_NUM
-	ret = i2c_get_chip_for_busnum(CONFIG_SYS_EEPROM_BUS_NUM,
-				      CONFIG_SYS_I2C_EEPROM_ADDR,
-				      CONFIG_SYS_I2C_EEPROM_ADDR_LEN, &dev);
+	// ret = i2c_get_chip_for_busnum(CONFIG_SYS_EEPROM_BUS_NUM,
+	// 			      CONFIG_SYS_I2C_EEPROM_ADDR,
+	// 			      CONFIG_SYS_I2C_EEPROM_ADDR_LEN, &dev);
 #else
-	ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR,
-				      CONFIG_SYS_I2C_EEPROM_ADDR_LEN, &dev);
+	// ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR,
+	// 			      CONFIG_SYS_I2C_EEPROM_ADDR_LEN, &dev);
 #endif
-	if (!ret)
-		ret = i2c_eeprom_read(dev, 0, (void *)&e, sizeof(e));
+	// if (!ret)
+	// 	ret = i2c_eeprom_read(dev, 0, (void *)&e, sizeof(e));
 #endif
 
 #ifdef CONFIG_SYS_EEPROM_BUS_NUM
 #ifndef CONFIG_DM_I2C
-	i2c_set_bus_num(bus);
+	// i2c_set_bus_num(bus);
 #endif
 #endif
 
@@ -226,13 +226,37 @@ static int read_eeprom(void)
 	 * Check if SN and Errata field are defined. If not set the length of
 	 * the string to 0.
 	 */
-	if (e.sn[0] == 0xff) e.sn[0] = 0;
-	if (e.errata[0] == 0xff) e.errata[0] = 0;
-#ifdef CONFIG_SYS_I2C_EEPROM_NXID
-	if (e.board_version[0] == 0xff) e.board_version[0] = 0;
-	if (e.product_info[0] == 0xff)
-		e.product_info[0] = 0;
-#endif
+// 	if (e.sn[0] == 0xff) e.sn[0] = 0;
+// 	if (e.errata[0] == 0xff) e.errata[0] = 0;
+// #ifdef CONFIG_SYS_I2C_EEPROM_NXID
+// 	if (e.board_version[0] == 0xff) e.board_version[0] = 0;
+// 	if (e.product_info[0] == 0xff)
+// 		e.product_info[0] = 0;
+// #endif
+	const u8 hardcoded_id[4] = {1, 1, 1, 1};
+	const u8 hardcoded_sn[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+	const u8 hardcoded_mac[6] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66};
+
+	memcpy(e.id, hardcoded_id, sizeof(hardcoded_id));
+	memcpy(e.sn, hardcoded_sn, sizeof(hardcoded_sn));
+	memset(e.errata, 5, 0);
+	memset(e.date, 6, 0);
+
+	e.version = 0xaabbccdd;
+	memset(e.tempcal, 8, 0);
+	memset(e.tempcalsys, 2, 0);
+	e.tempcalflags = 0;
+
+	e.mac_count = 1;
+	e.mac_flag = 0x00;
+	// e.mac[MAX_NUM_PORTS][ARP_HLEN]
+	memcpy(e.mac[0], hardcoded_mac, ARP_HLEN);
+	memset(e.board_version, 16, 0);
+	memset(e.product_info, 64, 0);
+
+	e.crc = 0x00;
+	ret = 0;
+	// update_crc();
 
 #ifdef DEBUG
 	show_eeprom();
@@ -262,104 +286,105 @@ static void update_crc(void)
  */
 static int prog_eeprom(void)
 {
-	int ret = 0;
-	int i;
-	void *p;
-#ifdef CONFIG_SYS_EEPROM_BUS_NUM
-#ifndef CONFIG_DM_I2C
-	unsigned int bus;
-#endif
-#endif
+	printf("Programming of configuration is not supported on N4.\n");
+// 	int ret = 0;
+// 	int i;
+// 	void *p;
+// #ifdef CONFIG_SYS_EEPROM_BUS_NUM
+// #ifndef CONFIG_DM_I2C
+// 	unsigned int bus;
+// #endif
+// #endif
 
-	/* Set the reserved values to 0xFF   */
-#ifdef CONFIG_SYS_I2C_EEPROM_NXID
-	e.res_0 = 0xFF;
-	memset(e.res_1, 0xFF, sizeof(e.res_1));
-#else
-	memset(e.res_0, 0xFF, sizeof(e.res_0));
-#endif
-	update_crc();
+// 	/* Set the reserved values to 0xFF   */
+// #ifdef CONFIG_SYS_I2C_EEPROM_NXID
+// 	e.res_0 = 0xFF;
+// 	memset(e.res_1, 0xFF, sizeof(e.res_1));
+// #else
+// 	memset(e.res_0, 0xFF, sizeof(e.res_0));
+// #endif
+// 	update_crc();
 
-#ifndef CONFIG_DM_I2C
-#ifdef CONFIG_SYS_EEPROM_BUS_NUM
-	bus = i2c_get_bus_num();
-	i2c_set_bus_num(CONFIG_SYS_EEPROM_BUS_NUM);
-#endif
-#endif
+// #ifndef CONFIG_DM_I2C
+// #ifdef CONFIG_SYS_EEPROM_BUS_NUM
+// 	bus = i2c_get_bus_num();
+// 	i2c_set_bus_num(CONFIG_SYS_EEPROM_BUS_NUM);
+// #endif
+// #endif
 
-	/*
-	 * The AT24C02 datasheet says that data can only be written in page
-	 * mode, which means 8 bytes at a time, and it takes up to 5ms to
-	 * complete a given write.
-	 */
-	for (i = 0, p = &e; i < sizeof(e); i += 8, p += 8) {
-#ifndef CONFIG_DM_I2C
-		ret = i2c_write(CONFIG_SYS_I2C_EEPROM_ADDR, i,
-				CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-				p, min((int)(sizeof(e) - i), 8));
-		if (ret)
-			break;
-		udelay(5000);	/* 5ms write cycle timing */
-#else
-		struct udevice *dev;
-#ifdef CONFIG_SYS_EEPROM_BUS_NUM
-		ret = i2c_get_chip_for_busnum(CONFIG_SYS_EEPROM_BUS_NUM,
-					      CONFIG_SYS_I2C_EEPROM_ADDR,
-					      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-					      &dev);
-#else
-		ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR,
-					      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-					      &dev);
-#endif
-		if (!ret)
-			ret = i2c_eeprom_write(dev, i, p, min((int)(sizeof(e) - i), 8));
-#endif
-		if (ret)
-			break;
-		udelay(5000);	/* 5ms write cycle timing */
-	}
+// 	/*
+// 	 * The AT24C02 datasheet says that data can only be written in page
+// 	 * mode, which means 8 bytes at a time, and it takes up to 5ms to
+// 	 * complete a given write.
+// 	 */
+// 	for (i = 0, p = &e; i < sizeof(e); i += 8, p += 8) {
+// #ifndef CONFIG_DM_I2C
+// 		ret = i2c_write(CONFIG_SYS_I2C_EEPROM_ADDR, i,
+// 				CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+// 				p, min((int)(sizeof(e) - i), 8));
+// 		if (ret)
+// 			break;
+// 		udelay(5000);	/* 5ms write cycle timing */
+// #else
+// 		struct udevice *dev;
+// #ifdef CONFIG_SYS_EEPROM_BUS_NUM
+// 		ret = i2c_get_chip_for_busnum(CONFIG_SYS_EEPROM_BUS_NUM,
+// 					      CONFIG_SYS_I2C_EEPROM_ADDR,
+// 					      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+// 					      &dev);
+// #else
+// 		ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR,
+// 					      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+// 					      &dev);
+// #endif
+// 		if (!ret)
+// 			ret = i2c_eeprom_write(dev, i, p, min((int)(sizeof(e) - i), 8));
+// #endif
+// 		if (ret)
+// 			break;
+// 		udelay(5000);	/* 5ms write cycle timing */
+// 	}
 
-	if (!ret) {
-		/* Verify the write by reading back the EEPROM and comparing */
-		struct eeprom e2;
+// 	if (!ret) {
+// 		/* Verify the write by reading back the EEPROM and comparing */
+// 		struct eeprom e2;
 
-#ifndef CONFIG_DM_I2C
-		ret = i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, 0,
-			       CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-			       (void *)&e2, sizeof(e2));
-#else
-		struct udevice *dev;
-#ifdef CONFIG_SYS_EEPROM_BUS_NUM
-		ret = i2c_get_chip_for_busnum(CONFIG_SYS_EEPROM_BUS_NUM,
-					      CONFIG_SYS_I2C_EEPROM_ADDR,
-					      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-					      &dev);
-#else
-		ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR,
-					      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-					      &dev);
-#endif
-		if (!ret)
-			ret = i2c_eeprom_read(dev, 0, (void *)&e2, sizeof(e2));
-#endif
-		if (!ret && memcmp(&e, &e2, sizeof(e)))
-			ret = -1;
-	}
+// #ifndef CONFIG_DM_I2C
+// 		ret = i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, 0,
+// 			       CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+// 			       (void *)&e2, sizeof(e2));
+// #else
+// 		struct udevice *dev;
+// #ifdef CONFIG_SYS_EEPROM_BUS_NUM
+// 		ret = i2c_get_chip_for_busnum(CONFIG_SYS_EEPROM_BUS_NUM,
+// 					      CONFIG_SYS_I2C_EEPROM_ADDR,
+// 					      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+// 					      &dev);
+// #else
+// 		ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR,
+// 					      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+// 					      &dev);
+// #endif
+// 		if (!ret)
+// 			ret = i2c_eeprom_read(dev, 0, (void *)&e2, sizeof(e2));
+// #endif
+// 		if (!ret && memcmp(&e, &e2, sizeof(e)))
+// 			ret = -1;
+// 	}
 
-#ifndef CONFIG_DM_I2C
-#ifdef CONFIG_SYS_EEPROM_BUS_NUM
-	i2c_set_bus_num(bus);
-#endif
-#endif
+// #ifndef CONFIG_DM_I2C
+// #ifdef CONFIG_SYS_EEPROM_BUS_NUM
+// 	i2c_set_bus_num(bus);
+// #endif
+// #endif
 
-	if (ret) {
-		printf("Programming failed.\n");
-		has_been_read = 0;
-		return -1;
-	}
+	// if (ret) {
+	// 	printf("Programming failed.\n");
+	// 	has_been_read = 0;
+	// 	return -1;
+	// }
 
-	printf("Programming passed.\n");
+	// printf("Programming passed.\n");
 	return 0;
 }
 
@@ -652,39 +677,40 @@ int mac_read_from_eeprom(void)
  */
 unsigned int get_cpu_board_revision(void)
 {
-	struct board_eeprom {
-		u32 id;           /* 0x00 - 0x03 EEPROM Tag 'CCID' */
-		u8 major;         /* 0x04        Board revision, major */
-		u8 minor;         /* 0x05        Board revision, minor */
-	} be;
+// 	struct board_eeprom {
+// 		u32 id;           /* 0x00 - 0x03 EEPROM Tag 'CCID' */
+// 		u8 major;         /* 0x04        Board revision, major */
+// 		u8 minor;         /* 0x05        Board revision, minor */
+// 	} be;
 
-#ifndef CONFIG_DM_I2C
-	i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, 0, CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-		(void *)&be, sizeof(be));
-#else
-	struct udevice *dev;
-	int ret;
-#ifdef CONFIG_SYS_EEPROM_BUS_NUM
-	ret = i2c_get_chip_for_busnum(CONFIG_SYS_EEPROM_BUS_NUM,
-				      CONFIG_SYS_I2C_EEPROM_ADDR,
-				      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-				      &dev);
-#else
-	ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR,
-				      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
-				      &dev);
-#endif
-	if (!ret)
-		dm_i2c_read(dev, 0, (void *)&be, sizeof(be));
-#endif
+// #ifndef CONFIG_DM_I2C
+// 	i2c_read(CONFIG_SYS_I2C_EEPROM_ADDR, 0, CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+// 		(void *)&be, sizeof(be));
+// #else
+// 	struct udevice *dev;
+// 	int ret;
+// #ifdef CONFIG_SYS_EEPROM_BUS_NUM
+// 	ret = i2c_get_chip_for_busnum(CONFIG_SYS_EEPROM_BUS_NUM,
+// 				      CONFIG_SYS_I2C_EEPROM_ADDR,
+// 				      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+// 				      &dev);
+// #else
+// 	ret = i2c_get_chip_for_busnum(0, CONFIG_SYS_I2C_EEPROM_ADDR,
+// 				      CONFIG_SYS_I2C_EEPROM_ADDR_LEN,
+// 				      &dev);
+// #endif
+// 	if (!ret)
+// 		dm_i2c_read(dev, 0, (void *)&be, sizeof(be));
+// #endif
 
-	if (be.id != (('C' << 24) | ('C' << 16) | ('I' << 8) | 'D'))
-		return MPC85XX_CPU_BOARD_REV(0, 0);
+// 	if (be.id != (('C' << 24) | ('C' << 16) | ('I' << 8) | 'D'))
+// 		return MPC85XX_CPU_BOARD_REV(0, 0);
 
-	if ((be.major == 0xff) && (be.minor == 0xff))
-		return MPC85XX_CPU_BOARD_REV(0, 0);
+// 	if ((be.major == 0xff) && (be.minor == 0xff))
+// 		return MPC85XX_CPU_BOARD_REV(0, 0);
 
-	return MPC85XX_CPU_BOARD_REV(be.major, be.minor);
+// 	return MPC85XX_CPU_BOARD_REV(be.major, be.minor);
+	return 0;
 }
 #endif
 
