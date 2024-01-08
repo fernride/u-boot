@@ -353,8 +353,11 @@ static struct serial_device *get_current(void)
  */
 int serial_init(void)
 {
+	int ret;
 	gd->flags |= GD_FLG_SERIAL_READY;
-	return get_current()->start();
+	ret = get_current()->start();
+	printf("Done with serial init");
+	return ret;
 }
 
 /**

@@ -578,6 +578,16 @@ struct udevice *dev_get_parent(const struct udevice *child);
 ulong dev_get_driver_data(const struct udevice *dev);
 
 /**
+ * dev_get_uclass_platdata() - Get the uclass platform data for a device
+ *
+ * This checks that dev is not NULL, but no other checks for now
+ *
+ * @dev		Device to check
+ * @return uclass's platform data, or NULL if none
+ */
+void *dev_get_uclass_platdata(const struct udevice *dev);
+
+/**
  * dev_get_driver_ops() - get the device's driver's operations
  *
  * This checks that dev is not NULL, and returns the pointer to device's

@@ -380,6 +380,35 @@ static int reserve_round_4k(void)
 	return 0;
 }
 
+
+#ifdef CONFIG_ARM
+__weak int reserve_mmu(void)
+{
+#if !(CONFIG_IS_ENABLED(SYS_ICACHE_OFF) && CONFIG_IS_ENABLED(SYS_DCACHE_OFF))
+	/* reserve TLB table */
+	gd->arch.tlb_size = PGTABLE_SIZE;
+	gd->relocaddr -= gd->arch.tlb_size;
+
+	/* round down to next 64 kB limit */
+	gd->relocaddr &= ~(0x10000 - 1);
+
+	gd->arch.tlb_addr = gd->relocaddr;
+	printf("TLB table from %08lx to %08lx\n", gd->arch.tlb_addr,
+	      gd->arch.tlb_addr + gd->arch.tlb_size);
+
+#ifdef CONFIG_SYS_MEM_RESERVE_SECURE
+	/*
+	 * Record allocated tlb_addr in case gd->tlb_addr to be overwritten
+	 * with location within secure ram.
+	 */
+	gd->arch.tlb_allocated = gd->arch.tlb_addr;
+#endif
+#endif
+
+	return 0;
+}
+#endif
+
 __weak int arch_reserve_mmu(void)
 {
 	return 0;
@@ -838,10 +867,17 @@ static const init_fnc_t init_sequence_f[] = {
 #if defined(CONFIG_HAVE_FSP)
 	arch_fsp_init,
 #endif
+	initf_dm,
+	env_init,		/* initialize environment */
+	init_baud_rate,		/* initialze baudrate settings */
+	serial_init,		/* serial communications setup */
+	console_init_f,		/* stage 1 init of console */
+	display_options,	/* say that we are here */
+	display_text_info,	/* show debugging info if required */
+
 	arch_cpu_init,		/* basic arch cpu dependent setup */
 	mach_cpu_init,		/* SoC/machine dependent CPU setup */
-	initf_dm,
-	arch_cpu_init_dm,
+	//arch_cpu_init_dm,
 #if defined(CONFIG_BOARD_EARLY_INIT_F)
 	board_early_init_f,
 #endif
@@ -855,12 +891,12 @@ static const init_fnc_t init_sequence_f[] = {
 #if defined(CONFIG_BOARD_POSTCLK_INIT)
 	board_postclk_init,
 #endif
-	env_init,		/* initialize environment */
-	init_baud_rate,		/* initialze baudrate settings */
-	serial_init,		/* serial communications setup */
-	console_init_f,		/* stage 1 init of console */
-	display_options,	/* say that we are here */
-	display_text_info,	/* show debugging info if required */
+	//env_init,		/* initialize environment */
+	//init_baud_rate,		/* initialze baudrate settings */
+	//serial_init,		/* serial communications setup */
+	//console_init_f,		/* stage 1 init of console */
+	//display_options,	/* say that we are here */
+	//display_text_info,	/* show debugging info if required */
 	checkcpu,
 #if defined(CONFIG_SYSRESET)
 	print_resetinfo,
@@ -916,15 +952,11 @@ static const init_fnc_t init_sequence_f[] = {
 	 *  - board info struct
 	 */
 	setup_dest_addr,
-#ifdef CONFIG_OF_BOARD_FIXUP
-	fix_fdt,
-#endif
-#ifdef CONFIG_PRAM
-	reserve_pram,
-#endif
+	// START NEW SHIT
 	reserve_round_4k,
-	arch_reserve_mmu,
-	reserve_video,
+#ifdef CONFIG_ARM
+	reserve_mmu,
+#endif
 	reserve_trace,
 	reserve_uboot,
 	reserve_malloc,
@@ -937,8 +969,18 @@ static const init_fnc_t init_sequence_f[] = {
 	reserve_stacks,
 	dram_init_banksize,
 	show_dram_config,
+	// END NEW SHIT
+#ifdef CONFIG_OF_BOARD_FIXUP
+//nvm we have this
+	fix_fdt,
+#endif
+#ifdef CONFIG_PRAM
+	reserve_pram,
+#endif
+	//arch_reserve_mmu,
+
 	INIT_FUNC_WATCHDOG_RESET
-	setup_bdinfo,
+	//setup_bdinfo,
 	display_new_sp,
 	INIT_FUNC_WATCHDOG_RESET
 	reloc_fdt,
@@ -949,7 +991,7 @@ static const init_fnc_t init_sequence_f[] = {
 	copy_uboot_to_ram,
 	do_elf_reloc_fixups,
 #endif
-	clear_bss,
+	//clear_bss,
 #if !defined(CONFIG_ARM) && !defined(CONFIG_SANDBOX) && \
 		!CONFIG_IS_ENABLED(X86_64)
 	jump_to_copy,

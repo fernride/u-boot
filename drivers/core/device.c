@@ -276,6 +276,16 @@ int device_bind_by_name(struct udevice *parent, bool pre_reloc_only,
 	return ret;
 }
 
+void *dev_get_uclass_platdata(const struct udevice *dev)
+{
+	if (!dev) {
+		dm_warn("%s: null device\n", __func__);
+		return NULL;
+	}
+
+	return dev->uclass_plat_;
+}
+
 int device_reparent(struct udevice *dev, struct udevice *new_parent)
 {
 	struct udevice *pos, *n;
