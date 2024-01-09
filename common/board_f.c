@@ -867,16 +867,9 @@ static const init_fnc_t init_sequence_f[] = {
 #if defined(CONFIG_HAVE_FSP)
 	arch_fsp_init,
 #endif
-	initf_dm,
-	env_init,		/* initialize environment */
-	init_baud_rate,		/* initialze baudrate settings */
-	serial_init,		/* serial communications setup */
-	console_init_f,		/* stage 1 init of console */
-	display_options,	/* say that we are here */
-	display_text_info,	/* show debugging info if required */
-
 	arch_cpu_init,		/* basic arch cpu dependent setup */
 	mach_cpu_init,		/* SoC/machine dependent CPU setup */
+	initf_dm,
 	//arch_cpu_init_dm,
 #if defined(CONFIG_BOARD_EARLY_INIT_F)
 	board_early_init_f,
@@ -891,12 +884,12 @@ static const init_fnc_t init_sequence_f[] = {
 #if defined(CONFIG_BOARD_POSTCLK_INIT)
 	board_postclk_init,
 #endif
-	//env_init,		/* initialize environment */
-	//init_baud_rate,		/* initialze baudrate settings */
-	//serial_init,		/* serial communications setup */
-	//console_init_f,		/* stage 1 init of console */
-	//display_options,	/* say that we are here */
-	//display_text_info,	/* show debugging info if required */
+	env_init,		/* initialize environment */
+	init_baud_rate,		/* initialze baudrate settings */
+	serial_init,		/* serial communications setup */
+	console_init_f,		/* stage 1 init of console */
+	display_options,	/* say that we are here */
+	display_text_info,	/* show debugging info if required */
 	checkcpu,
 #if defined(CONFIG_SYSRESET)
 	print_resetinfo,

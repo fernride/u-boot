@@ -234,26 +234,37 @@ static int get_cores_info(u32 *max_cores_per_cluster,
 	return 0;
 }
 
+#define S32CC_A53_GPR_LOCKSTEP_EN	0x0
+
 static bool is_lockstep_enabled(void)
 {
-	struct udevice *soc;
-	struct soc_s32cc_plat soc_data;
 	int ret;
+	u32 lockstep_enabled = 0;
+	struct udevice *s32cc_a53_gpr = NULL;
+	const char *a53_compat = "nxp,s32cc-a53-gpr";
+	ofnode node;
 
-	ret = soc_get(&soc);
-	if (ret) {
-		printf(":%s: Failed to get SoC (err = %d)\n", __func__, ret);
-		return ret;
+	node = ofnode_by_compatible(ofnode_null(), a53_compat);
+	if (!ofnode_valid(node)) {
+		printf("%s: Couldn't find \"%s\" node\n", __func__, a53_compat);
+		return false;
 	}
 
-	ret = soc_get_platform_data(soc, &soc_data, sizeof(soc_data));
+	ret = uclass_get_device_by_ofnode(UCLASS_MISC, node, &s32cc_a53_gpr);
 	if (ret) {
-		printf(":%s: Failed to get SoC platform data (err = %d)\n",
+		printf("%s: No A53 GPR (err = %d)\n", __func__, ret);
+		return false;
+	}
+
+	ret = misc_read(s32cc_a53_gpr, S32CC_A53_GPR_LOCKSTEP_EN,
+			&lockstep_enabled, sizeof(lockstep_enabled));
+	if (ret != sizeof(lockstep_enabled)) {
+		printf("%s: Failed to read if Lockstep Enabled (err = %d)\n",
 		       __func__, ret);
-		return ret;
+		return false;
 	}
 
-	return soc_data.lockstep_enabled;
+	return !!lockstep_enabled;
 }
 
 static int ft_fixup_cpu(void *blob)
