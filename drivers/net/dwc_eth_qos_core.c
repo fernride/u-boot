@@ -21,6 +21,7 @@
  * field.
  *
  */
+ #define DEBUG
 
 #include <common.h>
 #include <clk.h>

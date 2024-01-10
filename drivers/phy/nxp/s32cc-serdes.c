@@ -2,7 +2,8 @@
 /*
  * Copyright 2020-2022 NXP
  * SERDES driver for S32CC SoCs
- */
+ */ 
+#define DEBUG
 
 #include <common.h>
 #include <clk.h>
@@ -475,7 +476,6 @@ static int xpcs_init_clks(struct serdes *serdes)
 	default:
 		return -EINVAL;
 	}
-
 	for (i = 0; i < ARRAY_SIZE(order); i++) {
 		xpcs_id = order[i];
 

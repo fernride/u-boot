@@ -4,6 +4,8 @@
  *
  * Driver for XPCS side of the SerDes module present on S32CC platforms
  */
+#define DEBUG
+
 #include <command.h>
 #include <regmap.h>
 #include <sort.h>
