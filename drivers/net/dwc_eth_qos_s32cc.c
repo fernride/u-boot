@@ -10,8 +10,6 @@
  *    Based on Synopsys DW EQOS MAC 5.10a
  *
  */
-#define DEBUG
-
 #include <common.h>
 #include <clk.h>
 #include <dm.h>

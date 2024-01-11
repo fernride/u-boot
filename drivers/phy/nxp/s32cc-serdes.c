@@ -2,9 +2,7 @@
 /*
  * Copyright 2020-2022 NXP
  * SERDES driver for S32CC SoCs
- */ 
-#define DEBUG
-
+ */
 #include <common.h>
 #include <clk.h>
 #include <dm.h>
