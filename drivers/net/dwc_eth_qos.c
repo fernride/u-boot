@@ -1847,9 +1847,37 @@ static int eqos_probe(struct udevice *dev)
 		goto err_remove_resources_tegra;
 	}
 
+
 #ifdef CONFIG_DM_ETH_PHY
 	eqos->mii = eth_phy_get_mdio_bus(dev);
 #endif
+	if (!eqos->mii) {
+		ofnode child;
+		ofnode_for_each_available_compatible_child(child,
+				dev->node_, "snps,dwmac-mdio") {
+			eqos->mii = mdio_alloc();
+			if (!eqos->mii) {
+				pr_err("mdio_alloc() failed");
+				ret = -ENOMEM;
+				goto err_stop_clks;
+			}
+			pinctrl_select_state(dev, "gmac_mdio");
+			eqos->mii->read = eqos_mdio_read;
+			eqos->mii->write = eqos_mdio_write;
+			eqos->mii->priv = eqos;
+			strncpy(eqos->mii->name,
+					ofnode_get_name(child), MDIO_NAME_LEN);
+			eqos->mii->name[MDIO_NAME_LEN-1] = '\0';
+
+			ret = mdio_register(eqos->mii);
+			if (ret < 0) {
+				pr_err("mdio_register() failed: %d", ret);
+				goto err_free_mdio;
+			}
+		}
+	}
+
+/*
 	if (!eqos->mii) {
 		eqos->mii = mdio_alloc();
 		if (!eqos->mii) {
@@ -1868,6 +1896,7 @@ static int eqos_probe(struct udevice *dev)
 			goto err_free_mdio;
 		}
 	}
+	*/
 
 #ifdef CONFIG_DM_ETH_PHY
 	eth_phy_set_mdio_bus(dev, eqos->mii);
@@ -1895,8 +1924,8 @@ static int eqos_remove(struct udevice *dev)
 
 	debug("%s(dev=%p):\n", __func__, dev);
 
-	mdio_unregister(eqos->mii);
-	mdio_free(eqos->mii);
+	//mdio_unregister(eqos->mii);
+	//mdio_free(eqos->mii);
 	eqos->config->ops->eqos_stop_clks(dev);
 	eqos->config->ops->eqos_remove_resources(dev);
 

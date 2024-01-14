@@ -738,7 +738,8 @@ int __weak get_phy_id(struct mii_dev *bus, int addr, int devad, u32 *phy_id)
 
 	*phy_id |= (phy_reg & 0xffff);
 
-	return 0;
+	//return 0;
+	return ((*phy_id != 0) && (*phy_id != 0xffffffff)) ? 0 : -EIO;
 }
 
 static struct phy_device *create_phy_by_mask(struct mii_dev *bus,
