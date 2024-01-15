@@ -52,7 +52,7 @@ CONFIG_SPI_FLASH_MX25UW51245G=y
 #CONFIG_NXP_S32GRDB_BOARD=y
 CONFIG_SYS_MEM_SIZE=0x00800000
 #CONFIG_S32CC_HWCONFIG="serdes0:mode=xpcs0&xpcs1,clock=ext,fmhz=125;serdes1:mode=xpcs0&xpcs1,clock=ext,fmhz=125;xpcs0_0:speed=100M;xpcs0_1:speed=100M;xpcs1_0:speed=100M;xpcs1_1:speed=100M"
-CONFIG_S32CC_HWCONFIG="serdes0:mode=xpcs0&xpcs1,clock=int,fmhz=125;serdes1:mode=xpcs0&xpcs1,clock=int,fmhz=125;xpcs0_0:speed=1G;xpcs0_1:speed=1G;xpcs1_0:speed=1G;xpcs1_1:speed=1G"
+CONFIG_S32CC_HWCONFIG="serdes0:mode=xpcs0,clock=int,fmhz=100;serdes1:mode=pcie,clock=ext,fmhz=100;pcie1:mode=rc;xpcs0_0:speed=1G;xpcs0_1:speed=1G;"
 CONFIG_PINCTRL_SCMI=n
 CONFIG_ENV_OFFSET=0x2000
 #CONFIG_SYS_MALLOC_F_LEN=0x2000
