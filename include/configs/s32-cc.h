@@ -40,6 +40,7 @@
 #define S32CC_BOOT_SCR_ADDR		0x82F00000
 #define S32CC_FDT_ADDR			0x83000000
 #define S32CC_RAMDISK_ADDR		0x90000000
+#define CONFIG_TFTP_PORT
 
 /* Disable Ramdisk & FDT relocation*/
 #define S32CC_INITRD_HIGH_ADDR		0xffffffffffffffff
@@ -113,6 +114,7 @@
 	"image=Image\0" \
 	"initrd_high=" __stringify(S32CC_INITRD_HIGH_ADDR) "\0" \
 	"ipaddr=" S32CC_IPADDR "\0"\
+	"tftpdstp=6969\0 " \
 	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}; " \
 		 "run fdt_override;\0" \
 	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
