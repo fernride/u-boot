@@ -64,9 +64,9 @@
 
 #define NFSRAMFS_ADDR			"-"
 #define NFSRAMFS_TFTP_CMD		""
-#define S32CC_IPADDR			"10.0.0.100"
+#define S32CC_IPADDR			"192.168.0.2"
 #define S32CC_NETMASK			"255.255.255.0"
-#define S32CC_SERVERIP			"10.0.0.1"
+#define S32CC_SERVERIP			"192.168.0.1"
 
 #define CONFIG_HWCONFIG
 
@@ -239,6 +239,7 @@
 #      define CONFIG_BOOTCOMMAND XEN_BOOTCMD
 #    else
 #      define CONFIG_BOOTCOMMAND \
+	"sja init_ports 2:0; " \
 	"mmc dev ${mmcdev}; " \
 	"if mmc rescan; " \
 	"then " \

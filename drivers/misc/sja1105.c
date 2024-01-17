@@ -650,7 +650,6 @@ static int sja1105_configuration_load(struct sja_parms *sjap)
 	int i;
 	int ret;
 
-	printf("#### loading configuration\n");
 	if (!sjap->cfg_bin) {
 		printf("Error: SJA1105 Switch configuration is NULL\n");
 		return -EINVAL;
@@ -695,10 +694,6 @@ static int sja1105_configuration_load(struct sja_parms *sjap)
 	remaining_words = nb_words;
 	dev_addr = SJA1105_CONFIG_START_ADDRESS;
 
-	printf("Displaying IRQ_STAT regs before SW core reset\n");
-	display_status_regs(sjap);
-
-	printf("### Performing switch core reset before config load\n");
 	ret = sja1105_write_reg32_v2(sjap, RGU_BASE_ADDR, 0x100, 0x100000);
 	if (ret < 0) {
 		printf("#### Error resetting switch core\n");
@@ -706,9 +701,6 @@ static int sja1105_configuration_load(struct sja_parms *sjap)
 	}
 	// Wait for the switch to come out of reset
 	udelay(1000);
-	printf("Displaying IRQ_STAT regs after SW core reset, before loading config\n");
-	display_status_regs(sjap);
-
 
 	i = 0;
 	while (remaining_words > 0) {
@@ -732,9 +724,6 @@ static int sja1105_configuration_load(struct sja_parms *sjap)
 		if (i % 10 == 0)
 			sja1105_post_cfg_load_check(sjap);
 	}
-
-	printf("Displaying IRQ_STAT regs after loading config\n");
-	display_status_regs(sjap);
 
 	if (!sja1105_post_cfg_load_check(sjap)) {
 		printf("SJA1105 configuration failed\n");
@@ -864,14 +853,14 @@ static int load_config_file(struct udevice *dev)
 	int bus = dev->parent->seq_;
 	int ret;
 
-	printf("Loading SJA1105 firmware over SPI %d:%d\n", bus, cs);
+	debug("Loading SJA1105 firmware over SPI %d:%d\n", bus, cs);
 
 	ret = init_config(dev);
 	if (ret) {
 		printf("Error SJA1105 configuration not completed\n");
 		return -EINVAL;
 	} else {
-		printf("Loading firmware succesful\n");
+		debug("Loading SJA1110 firmware succesful\n");
 	}
 
 	return sja1105_configuration_load(sjap);
@@ -1929,19 +1918,19 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 	int ret, count = 20, val;
 
 	// Step 1: Reset SGMII port (RST = 1)
-	printf("Resetting SGMII port %d\n", port);
+	debug("Resetting SGMII port %d\n", port);
 	ret = write_sgmii_register(sjap, port, SGMII_SR_MII_CTRL_BASE, SGMII_SR_MII_CTRL_OFFSET, 0x8000);
 	if (ret < 0) {
 		printf("Error writing SGMII CTRL register port: %d\n", port);
 		return ret;
 	}
 	// Step 2: Poll the reset bit (RST = 0)
-	printf("Waiting for reset to complete\n");
+	debug("Waiting for reset to complete\n");
 	while (true) {
 		val = read_sgmii_register(sjap, port, SGMII_SR_MII_CTRL_BASE, SGMII_SR_MII_CTRL_OFFSET);
 		count--;
 		if ((val & 0x8000) && (count >= 0)) {
-			printf("Reset still on\n");
+			debug("Reset still on\n");
 		} else {
 			break;
 		}
@@ -1951,14 +1940,14 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 		return -1;
 	}
 	// Step 3: Program fixed PCS speed of 1G (AN_ENABLE=0 SS6=0 SS13=0)
-	printf("Setting fixed PCS speed: 1G\n");
+	debug("Setting fixed PCS speed: 1G\n");
 	ret = write_sgmii_register(sjap, port, SGMII_SR_MII_CTRL_BASE, SGMII_SR_MII_CTRL_OFFSET, 0x140);
 	if (ret < 0) {
 		printf("Error setting PCS speed\n");
 		return ret;
 	}
 	// Step 4: Program PCS for non-2.5G operation (EN_2_5_MODE=0 MAC_AUTO_SW=0)
-	printf("Setting PCS to non-2.5G operation\n");
+	debug("Setting PCS to non-2.5G operation\n");
 	ret = write_sgmii_register(sjap, port, SGMII_VR_MII_DIG_CTRL1_BASE, SGMII_VR_MII_DIG_CTRL1_OFFSET, 0x2000);
 	if (ret < 0) {
 		printf("Error setting PCS to non-2.5G operation\n");
@@ -2028,7 +2017,7 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 	}
 
 	// Step 14: Wait until transmitter PLL is in lock by polling PLL lock indicator until it is set.
-	printf("Waiting for PLL to lock\n");
+	debug("Waiting for PLL to lock\n");
 	count = 20;
 	while (true) {
 		val = read_sgmii_register(sjap, port, SGMII_TXPLL_CONTROL_0_BASE, SGMII_TXPLL_CONTROL_0_OFFSET);
@@ -2045,7 +2034,7 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 		printf("Error: PLL lock timeout.\n");
 		return -1;
 	} else {
-		printf("PLL Locked\n");
+		debug("PLL Locked\n");
 	}
 
 	// Step 15:  Release reset of PMA TX to enable data flow from PCS TX.
@@ -2100,7 +2089,7 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 	}
 
 	// Step 22: Poll RX Signal detector to indicate that there is a signal on RX input
-	printf("Waiting for RX Signal detect\n");
+	debug("Waiting for RX Signal detect\n");
 	count = 20;
 	while (true) {
 		val = read_sgmii_register(sjap, port, SGMII_RX_DATA_DETECT_BASE, SGMII_RX_DATA_DETECT_OFFSET);
@@ -2117,7 +2106,7 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 		printf("Error: RX Signal detect timeout.\n");
 		return -1;
 	} else {
-		printf("RX Signal detected\n");
+		debug("RX Signal detected\n");
 	}
 
 	// Step 23: Enable receiver PLL and CDR. Enable receiver CTLE
@@ -2127,7 +2116,7 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 		return ret;
 	}
 	// Step 24: Wait until PLL and CDR are in lock by polling PLL lock indicator until it is set.2
-	printf("Waiting for PLL and CDR lock\n");
+	debug("Waiting for PLL and CDR lock\n");
 	count = 20;
 	while (true) {
 		val = read_sgmii_register(sjap, port, SGMII_RXPLL_CONTROL_0_BASE, SGMII_RXPLL_CONTROL_0_OFFSET);
@@ -2143,7 +2132,7 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 		printf("Error: PLL and CDR lock timeout.\n");
 		return -1;
 	} else {
-		printf("PLL and CDR locked.\n");
+		debug("PLL and CDR locked.\n");
 	}
 
 	// Step 25: Release reset of PMA RX and enable data flow to PCS RX
@@ -2154,14 +2143,14 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 	}
 
 	// Step 26: Determine if PCS RX link is up by polling link status.2
-	printf("Waiting on PCS RX link up\n");
+	debug("Waiting on PCS RX link up\n");
 	count = 20;
 	while (true) {
 		val = read_sgmii_register(sjap, port, SGMII_SR_MII_STS_BASE, SGMII_SR_MII_STS_OFFSET);
 		// bit 2 is LINK_STS
 		count--;
 		if (!(val & 0x4) && (count >= 0)) {
-			printf("Waiting on PCS RX link up\n");
+			debug("Waiting on PCS RX link up\n");
 		} else {
 			break;
 		}
@@ -2170,11 +2159,11 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 		printf("Error: PLL and CDR lock timeout.\n");
 		return -1;
 	} else {
-		printf("PLL and CDR locked.\n");
+		debug("PLL and CDR locked.\n");
 	}
 
 	// Step 27: Determine if auto-negotiation has completed.
-	printf("Waiting on auto-negotation completed.\n");
+	debug("Waiting on auto-negotation completed.\n");
 	count = 20;
 	while (true) {
 		val = read_sgmii_register(sjap, port, SGMII_SR_MII_STS_BASE, SGMII_SR_MII_STS_OFFSET);
@@ -2190,7 +2179,7 @@ int init_sgmii_port(struct sja_parms *sjap, int port) {
 		printf("Error: Auto-negotiation timeout.\n");
 		return -1;
 	} else {
-		printf("Auto-negotiation completed.\n");
+		debug("Auto-negotiation completed.\n");
 	}
 
 	return 0;
@@ -2247,7 +2236,6 @@ int init_100base_tx_port1(struct sja_parms *sjap) {
 		end
 	*/
 	val = sja1105_read_reg32_v2(sjap, OTP_CTRL_BASE_ADDR, OTP_SHADOW1_17_ADDR);
-	printf("SHADOW1_17 REG: 0x%x\n", val);
 
 	// As far as I can tell we need the bottom 16 bits
 	txamp_10bt = val & 0xffff;
@@ -2266,14 +2254,14 @@ int init_100base_tx_port1(struct sja_parms *sjap) {
 	}
 
 	// Step 4: Poll Basic Control Register bit 15 until out of reset
-	printf("Waiting to come out of reset.\n");
-	count = 20;
+	debug("Waiting to come out of reset.\n");
+	count = 1000;
 	while (true) {
 		val = sja1105_read_reg32_v2(sjap, TX_100BASE_BASE_ADDR, TX_100BASE_BASIC_CONTROL_REG);
 		// bit 2 is LINK_STS
 		count--;
 		if ((val & 0x8000) && (count >= 0)) {
-			printf("Waiting to come out of reset\n");
+			debug("Waiting to come out of reset\n");
 		} else {
 			break;
 		}
@@ -2282,7 +2270,7 @@ int init_100base_tx_port1(struct sja_parms *sjap) {
 		printf("Error: Timeout waiting to come out of reset.\n");
 		return -1;
 	} else {
-		printf("100BASE-TX Reset complete.\n");
+		debug("100BASE-TX Reset complete.\n");
 	}
 
 	// Step 5: Reference trimming for ADC LDO
@@ -2303,7 +2291,7 @@ int init_100base_tx_port1(struct sja_parms *sjap) {
 	// The typical case has no additional stteps
 	if (code == 0x2) { // slow case
 		// Step 5a
-		printf("Configuring slow sample trimming\n");
+		debug("Configuring slow sample trimming\n");
 		// weird, 0xf4 doesn't seem to be documented, in the datasheet it is reserved
 		ret = sja1105_write_reg32_v2(sjap, TX_100BASE_BASE_ADDR, 0xf4, 0x7200);
 		if (ret < 0) {
@@ -2311,7 +2299,7 @@ int init_100base_tx_port1(struct sja_parms *sjap) {
 			return ret;
 		}
 	} else if (code == 0x1) { // fast case
-		printf("Configuring fast sample trimming\n");
+		debug("Configuring fast sample trimming\n");
 		// Step 5c
 		ret = sja1105_write_reg32_v2(sjap, TX_100BASE_BASE_ADDR, TX_100BASE_MISC_PCS_CONTROL0, 0x2300);
 		if (ret < 0) {
@@ -2319,7 +2307,7 @@ int init_100base_tx_port1(struct sja_parms *sjap) {
 			return ret;
 		}
 	} else {
-		printf("Typical sample trimming\n");
+		debug("Typical sample trimming\n");
 	}
 
 	// Phase 2: Force mode
@@ -2350,7 +2338,7 @@ int init_100base_tx_port1(struct sja_parms *sjap) {
 	}
 
 	// Step 5: Poll BASIC STATUS reg, check for link up
-	printf("Wait for link UP.\n");
+	debug("Wait for link UP.\n");
 	count = 100000;
 	while (true) {
 		val = sja1105_read_reg32_v2(sjap, TX_100BASE_BASE_ADDR, TX_100BASE_BASIC_STATUS);
@@ -2366,8 +2354,7 @@ int init_100base_tx_port1(struct sja_parms *sjap) {
 		printf("Error: Timeout waiting for link UP.\n");
 		return -1;
 	} else {
-		printf("100BASE-TX Link status: UP.\n");
-		printf("count: %d\n", count);
+		debug("100BASE-TX Link status: UP.\n");
 	}
 	return 0;
 }
@@ -2386,23 +2373,21 @@ int init_ports_fernride(struct udevice *dev) {
 	}
 	
 	val = sja1105_read_reg32(sjap, 0x00000000ull);
-	printf("Device Id: 0x%x\n", val);
+	debug("SJA1110 Device Id: 0x%x\n", val);
 
-	printf("\nInitializing SGMII port 3:\n");
+	printf("\nSJA1110: Initializing SGMII port 3\n");
 	ret = init_sgmii_port(sjap, 3);
 	if (ret < 0) {
 		printf("Error initializing SGMII port\n");
 		return ret;
 	}
-	printf("SGMII init complete\n");
 
-	printf("\nInitializing 100BASE-TX port:\n");
+	printf("SJA1110: Initializing 100BASE-TX port\n");
 	ret = init_100base_tx_port1(sjap);
 	if (ret < 0) {
 		printf("Error initializing 100base-tx port1\n");
 		return ret;
 	}
-	printf("100BASE-TX init complete\n");
 
 	return 0;
 }
@@ -2511,7 +2496,6 @@ static int do_sja_cmd(struct cmd_tbl *cmdtp, int flag, int argc, char * const ar
 		if (ret)
 			return CMD_RET_FAILURE;
 	} else if (!strcmp(argv[1], "init_ports")) {
-		printf("Setting up FERNRIDE port config\n");
 		ret = init_ports_fernride(dev);
 	} else if (!strcmp(argv[1], "speed")) {
 		if (argc >= 3 && !strchr(argv[2], ':'))
