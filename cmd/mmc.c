@@ -1061,6 +1061,110 @@ static int do_mmc_boot_wp(struct cmd_tbl *cmdtp, int flag,
 	return CMD_RET_SUCCESS;
 }
 
+static int do_mmc_mkfs(struct cmd_tbl *cmdtp, int flag,
+			int argc, char *const argv[])
+{
+    u32 fat_offset = 0x1000;
+
+    uint8_t fat_header[512] = {
+        // sector signature (3)
+        0xeb, 0x58, 0x90,
+        // OEM name (8)
+        'f', 'e', 'r', 'n', 'r', 'i', 'd', 'e' ,
+        // bytes per sector (2); sectors per cluster (1); reserved sectors (2); alloc tables (1)
+        0x00, 0x02, 0x01, 0x20, 0x00, 0x02,
+        // "0" for FAT32 (2); total logical sectors (2); media types (1); "0" for FAT32 (2)
+        0x00, 0x00, 0x00, 0x00, 0xf8, 0x00, 0x00,
+        // phys sectors per track (2); heads (2); hidden sectors (4); total sectors (4)
+        0x20, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00,
+        // sectors per alloc table (4); mirror flags (2); version (2);
+        0xe1, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        // root dir cluster (4); loc of info sector (2); loc of backup sector (2)
+        0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00,
+        // reserved boot file name (12)
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        // phys drive # (1); flags (1); ext signature (1); serial # (4)
+        0x80, 0x00, 0x29, 0x22, 0x71, 0xc8, 0x91,
+        // label (11)
+        'F',  'N', 'R', 'D', '-', 'F', 'A', 'T', ' ', ' ', ' ',
+        // fs type (8)
+        'F', 'A', 'T', '3', '2', ' ', ' ', ' ',
+        // sector signature
+        [0x1fe] = 0x55, 0xaa
+    };
+
+    uint8_t fat_information_sector[512] = {
+        // sector signature
+        'R', 'R', 'a', 'A',
+        // sector signature
+        [0x1e4] = 'r', 'r', 'A', 'a',
+        // last known free data cluster
+        [0x1e8] = 0xff,0xff,0xff,0xff,
+        // most recently allocated data cluster
+        [0x1ec] = 0x02, 0x00, 0x00, 0x00,
+        // sector signature
+        [0x1fc] = 0x00, 0x00, 0x55, 0xaa
+    };
+
+    uint8_t fat_data[512] = {
+        0xf8, 0xff, 0xff, 0x0f, 0xff, 0xff, 0xff, 0x0f,  0xf8, 0xff, 0xff, 0x0f,
+    };
+
+    uint8_t fat_volume_label[512] = {
+        'F', 'N', 'R', 'D', '-', 'F', 'A', 'T', ' ', ' ', ' ',
+        // attribute = volume label
+        0x08,
+        // create/access time
+        [0x0d] = 0x00, 0x8e, 0x61, 0x33, 0x58, 0x33, 0x58,
+        // modify time
+        [0x16] = 0x8e, 0x61, 0x33, 0x58
+    };
+
+    struct write_instruction
+    {
+        void *data;
+        u32 blk;
+    };
+    struct write_instruction write_instructions[] = {
+        {fat_header, 0},
+        {fat_header, 6},
+        {fat_information_sector, 1},
+        {fat_information_sector, 7},
+        {fat_data, 0x20},
+        {fat_data, 0x801},
+        {fat_volume_label, 0xfe2}
+    };
+
+    struct mmc *mmc = init_mmc_device(curr_device, false);
+    if (!mmc) {
+        printf("Error: cannot init mmc device\n");
+        return CMD_RET_FAILURE;
+    }
+
+    if (mmc_getwp(mmc) == 1) {
+        printf("Error: card is write protected!\n");
+        return CMD_RET_FAILURE;
+    }
+
+    for (int i=0; i < sizeof(write_instructions)/sizeof(struct write_instruction); ++i)
+    {
+        printf("MMC write: dev # %d, block # %d, count %d ... ", curr_device, write_instructions[i].blk + fat_offset, 1);
+
+        u32 blk_written = blk_dwrite(mmc_get_blk_desc(mmc), write_instructions[i].blk + fat_offset, 1, write_instructions[i].data);
+        if (blk_written == 1)
+        {
+            printf("Block written\n");
+        }
+        else
+        {
+            printf("ERROR\n");
+            return CMD_RET_FAILURE;
+        }
+    }
+
+    return CMD_RET_SUCCESS;
+}
+
 static struct cmd_tbl cmd_mmc[] = {
 	U_BOOT_CMD_MKENT(info, 1, 0, do_mmcinfo, "", ""),
 	U_BOOT_CMD_MKENT(read, 4, 1, do_mmc_read, "", ""),
@@ -1092,6 +1196,7 @@ static struct cmd_tbl cmd_mmc[] = {
 #ifdef CONFIG_CMD_BKOPS_ENABLE
 	U_BOOT_CMD_MKENT(bkops-enable, 2, 0, do_mmc_bkops_enable, "", ""),
 #endif
+    U_BOOT_CMD_MKENT(mkfs, 1, 0, do_mmc_mkfs, "", "create a 128MB FAT partition"),
 };
 
 static int do_mmcops(struct cmd_tbl *cmdtp, int flag, int argc,

@@ -133,6 +133,16 @@
 	"mmcdev=" __stringify(CONFIG_SYS_MMC_ENV_DEV) "\0" \
 	"mmcpart=" __stringify(MMC_PART_FAT) "\0" \
 	"mmcroot=/dev/mmcblk0p2 rootwait rw\0" \
+	"mbr_parts='name=data,start=2M,size=128M,id=0x0b'\0" \
+	"init_mmc_fs=mmc list; " \
+	    "if mbr verify mmc 0; " \
+	    "then" \
+	        ";" \
+	    "else " \
+	        "echo Creating a FAT data partition on eMMC; " \
+	        "mbr write mmc 0; " \
+	        "mmc mkfs; " \
+	    "fi\0" \
 	"netargs=setenv bootargs console=${console},${baudrate} " \
 		"root=/dev/nfs " \
 		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp " \
@@ -249,7 +259,8 @@
 		"then " \
 			"run mmcboot; " \
 		"fi; " \
-	"fi"
+	"fi; " \
+	"run init_mmc_fs"
 #    endif
 #  endif
 #endif
