@@ -141,7 +141,7 @@
 	    "else " \
 	        "echo Creating a FAT data partition on eMMC; " \
 	        "mbr write mmc 0; " \
-	        "mmc mkfs; " \
+	        "mmc mkfs 1000 40000; " \
 	    "fi\0" \
 	"netargs=setenv bootargs console=${console},${baudrate} " \
 		"root=/dev/nfs " \

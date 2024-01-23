@@ -1064,23 +1064,70 @@ static int do_mmc_boot_wp(struct cmd_tbl *cmdtp, int flag,
 static int do_mmc_mkfs(struct cmd_tbl *cmdtp, int flag,
 			int argc, char *const argv[])
 {
-    u32 fat_offset = 0x1000;
+#define BYTES_PER_SECTOR 512
 
-    uint8_t fat_header[512] = {
+    union converter {
+        u32 u32;
+        u8 u8[4];
+    };
+
+    union converter bytes_per_sector = { .u32 = BYTES_PER_SECTOR };
+    union converter reserved = { .u32 = 0x20 };
+
+    // parse cmdline args
+    char* parsing_end = NULL;
+    int param_index = 1;
+
+    if (argc != 3)
+        return CMD_RET_USAGE;
+    u32 fat_offset = hextoul(argv[param_index++], &parsing_end);
+    union converter fs_size;
+    // the first argument parsing successful?
+    if (*parsing_end == '\0')
+    {
+        // parse the next argument
+        fs_size.u32 = hextoul(argv[param_index++], &parsing_end);
+    }
+    // either the first or the second parsing failed?
+    if (*parsing_end != '\0')
+    {
+        printf("Failed to parse %s to hex number\n", argv[param_index-1]);
+        return CMD_RET_USAGE;
+    }
+
+    // this code mimics Microsoft behavior
+    u8 sectors_per_cluster = fs_size.u32 > 32*1024*1024*2 ? 64 :
+                             fs_size.u32 > 16*1024*1024*2 ? 32 :
+                             fs_size.u32 >  8*1024*1024*2 ? 16 :
+                             fs_size.u32 >     260*1024*2 ? 8 : 1;
+
+    union converter fat_size = { .u32 = (fs_size.u32 / sectors_per_cluster * 4)/BYTES_PER_SECTOR };
+    union converter info_sector = { .u32 = 0x01 };
+    union converter backup_sector = { .u32 = 0x06 };
+
+    u8 fat_header[BYTES_PER_SECTOR] = {
         // sector signature (3)
         0xeb, 0x58, 0x90,
         // OEM name (8)
         'f', 'e', 'r', 'n', 'r', 'i', 'd', 'e' ,
-        // bytes per sector (2); sectors per cluster (1); reserved sectors (2); alloc tables (1)
-        0x00, 0x02, 0x01, 0x20, 0x00, 0x02,
-        // "0" for FAT32 (2); total logical sectors (2); media types (1); "0" for FAT32 (2)
-        0x00, 0x00, 0x00, 0x00, 0xf8, 0x00, 0x00,
-        // phys sectors per track (2); heads (2); hidden sectors (4); total sectors (4)
-        0x20, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00,
-        // sectors per alloc table (4); mirror flags (2); version (2);
-        0xe1, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        // root dir cluster (4); loc of info sector (2); loc of backup sector (2)
-        0x02, 0x00, 0x00, 0x00, 0x01, 0x00, 0x06, 0x00,
+        // bytes per sector (2); sectors per cluster (1);
+        bytes_per_sector.u8[0], bytes_per_sector.u8[1], sectors_per_cluster,
+        // reserved sectors (2)
+        reserved.u8[0], reserved.u8[1],
+        // alloc tables (1); "0" for FAT32 (2); total logical sectors (2); media types (1); "0" for FAT32 (2)
+        0x02, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x00, 0x00,
+        // phys sectors per track (2) [unused]; heads (2) [unused]; hidden sectors (4)
+        0x20, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00,
+        // total sectors (4)
+        fs_size.u8[0], fs_size.u8[1], fs_size.u8[2], fs_size.u8[3],
+        // sectors per alloc table (4)
+        fat_size.u8[0], fat_size.u8[1], fat_size.u8[2], fat_size.u8[3],
+        // mirror flags (2); version (2);
+        0x00, 0x00, 0x00, 0x00,
+        // root dir cluster (4)
+        0x02, 0x00, 0x00, 0x00,
+        // loc of info sector (2); loc of backup sector (2)
+        info_sector.u8[0], info_sector.u8[1], backup_sector.u8[0], backup_sector.u8[1],
         // reserved boot file name (12)
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
         // phys drive # (1); flags (1); ext signature (1); serial # (4)
@@ -1093,7 +1140,7 @@ static int do_mmc_mkfs(struct cmd_tbl *cmdtp, int flag,
         [0x1fe] = 0x55, 0xaa
     };
 
-    uint8_t fat_information_sector[512] = {
+    u8 fat_information_sector[BYTES_PER_SECTOR] = {
         // sector signature
         'R', 'R', 'a', 'A',
         // sector signature
@@ -1106,13 +1153,13 @@ static int do_mmc_mkfs(struct cmd_tbl *cmdtp, int flag,
         [0x1fc] = 0x00, 0x00, 0x55, 0xaa
     };
 
-    uint8_t fat_data[512] = {
+    u8 fat[BYTES_PER_SECTOR] = {
         0xf8, 0xff, 0xff, 0x0f, 0xff, 0xff, 0xff, 0x0f,  0xf8, 0xff, 0xff, 0x0f,
     };
 
-    uint8_t fat_volume_label[512] = {
+    u8 fat_volume_label[BYTES_PER_SECTOR] = {
         'F', 'N', 'R', 'D', '-', 'F', 'A', 'T', ' ', ' ', ' ',
-        // attribute = volume label
+        // attribute: type = volume label
         0x08,
         // create/access time
         [0x0d] = 0x00, 0x8e, 0x61, 0x33, 0x58, 0x33, 0x58,
@@ -1127,12 +1174,12 @@ static int do_mmc_mkfs(struct cmd_tbl *cmdtp, int flag,
     };
     struct write_instruction write_instructions[] = {
         {fat_header, 0},
-        {fat_header, 6},
-        {fat_information_sector, 1},
-        {fat_information_sector, 7},
-        {fat_data, 0x20},
-        {fat_data, 0x801},
-        {fat_volume_label, 0xfe2}
+        {fat_header, backup_sector.u32},
+        {fat_information_sector, info_sector.u32},
+        {fat_information_sector, backup_sector.u32 + info_sector.u32},
+        {fat, reserved.u32},
+        {fat, reserved.u32 + fat_size.u32},
+        {fat_volume_label, reserved.u32 + 2*fat_size.u32}
     };
 
     struct mmc *mmc = init_mmc_device(curr_device, false);
@@ -1146,9 +1193,17 @@ static int do_mmc_mkfs(struct cmd_tbl *cmdtp, int flag,
         return CMD_RET_FAILURE;
     }
 
+    u32 clean_sectors = reserved.u32 + 2*fat_size.u32 + sectors_per_cluster;
+    u32 blk_erase = blk_derase(mmc_get_blk_desc(mmc), fat_offset, clean_sectors);
+
+    if (blk_erase != clean_sectors)
+    {
+        return CMD_RET_FAILURE;
+    }
+
     for (int i=0; i < sizeof(write_instructions)/sizeof(struct write_instruction); ++i)
     {
-        printf("MMC write: dev # %d, block # %d, count %d ... ", curr_device, write_instructions[i].blk + fat_offset, 1);
+        printf("mkfs fat MMC write: dev # %d, block # %X ... ", curr_device, write_instructions[i].blk + fat_offset);
 
         u32 blk_written = blk_dwrite(mmc_get_blk_desc(mmc), write_instructions[i].blk + fat_offset, 1, write_instructions[i].data);
         if (blk_written == 1)
@@ -1196,7 +1251,7 @@ static struct cmd_tbl cmd_mmc[] = {
 #ifdef CONFIG_CMD_BKOPS_ENABLE
 	U_BOOT_CMD_MKENT(bkops-enable, 2, 0, do_mmc_bkops_enable, "", ""),
 #endif
-    U_BOOT_CMD_MKENT(mkfs, 1, 0, do_mmc_mkfs, "", "create a 128MB FAT partition"),
+    U_BOOT_CMD_MKENT(mkfs, 3, 0, do_mmc_mkfs, "", ""),
 };
 
 static int do_mmcops(struct cmd_tbl *cmdtp, int flag, int argc,
@@ -1244,6 +1299,7 @@ U_BOOT_CMD(
 	"    UHS_SDR50, UHS_DDR50, UHS_SDR104, MMC_HS_200, MMC_HS_400, MMC_HS_400_ES]\n"
 	"mmc list - lists available devices\n"
 	"mmc wp - power on write protect boot partitions\n"
+	"mmc mkfs <start block hex> <size in blocks hex> - create a FAT32 filesystem. block size is 512 bytes\n"
 #if CONFIG_IS_ENABLED(MMC_HW_PARTITIONING)
 	"mmc hwpartition <USER> <GP> <MODE> - does hardware partitioning\n"
 	"  arguments (sizes in 512-byte blocks):\n"
