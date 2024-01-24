@@ -28,30 +28,16 @@ static int simple_bus_post_bind(struct udevice *dev)
 #if CONFIG_IS_ENABLED(OF_PLATDATA)
 	return 0;
 #else
-	struct simple_bus_plat *plat = dev_get_uclass_plat(dev);
+	u32 cell[3];
 	int ret;
 
-	if (CONFIG_IS_ENABLED(SIMPLE_BUS_CORRECT_RANGE)) {
-		uint64_t caddr, paddr, len;
+	ret = dev_read_u32_array(dev, "ranges", cell, ARRAY_SIZE(cell));
+	if (!ret) {
+		struct simple_bus_plat *plat = dev_get_uclass_platdata(dev);
 
-		/* only read range index 0 */
-		ret = fdt_read_range((void *)gd->fdt_blob, dev_of_offset(dev),
-				     0, &caddr, &paddr, &len);
-		if (!ret) {
-			plat->base = caddr;
-			plat->target = paddr;
-			plat->size = len;
-		}
-	} else {
-		u32 cell[3];
-
-		ret = dev_read_u32_array(dev, "ranges", cell,
-					 ARRAY_SIZE(cell));
-		if (!ret) {
-			plat->base = cell[0];
-			plat->target = cell[1];
-			plat->size = cell[2];
-		}
+		plat->base = cell[0];
+		plat->target = cell[1];
+		plat->size = cell[2];
 	}
 
 	return dm_scan_fdt_dev(dev);

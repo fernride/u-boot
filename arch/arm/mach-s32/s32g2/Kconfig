@@ -59,6 +59,30 @@ config TARGET_S32G274AEMU
 	bool "Support S32G274A ZeBu"
 	select TARGET_TYPE_S32CC_EMULATOR
 
+config TARGET_S32G274AR2SBC2
+	bool "Support S32G274A R2SBC2 from MicroSys"
+	help
+	  This board is based on S32G274A R2SBC2 from MicroSys
+	#select NXP_S32GRDB_BOARD
+	imply PHY
+	imply PHYLIB
+	imply RGMII
+	imply SARADC_S32CC
+	imply PHY_MARVELL
+
+config TARGET_S32G274ATTTECHN4
+	bool "Support S32G274A TTTech N4"
+	help
+	  This board is S32G274A TTTech N4
+	#imply PHY
+	#imply PHYLIB
+	imply CMD_PMIC
+	imply DM_PMIC
+	imply DM_PMIC_VR5510
+	imply RGMII
+	#imply SARADC_S32CC
+	imply SJA1105X
+
 endchoice
 
 config NXP_PFENG
@@ -70,5 +94,6 @@ source "board/nxp/s32g2xxaevb/Kconfig"
 source "board/nxp/s32g2xxaevb3/Kconfig"
 source "board/nxp/s32g274abluebox3/Kconfig"
 source "board/nxp/s32g274aemu/Kconfig"
+source "board/tttech/s32g274atttechn4/Kconfig"
 
 endif

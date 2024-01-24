@@ -167,6 +167,22 @@ static struct phy_device *dm_eth_connect_phy_handle(struct udevice *ethdev,
 		return NULL;
 	}
 
+	{
+	    struct udevice *dev;
+	    ofnode n = phandle.node;
+
+	    while (ofnode_valid(n)) {
+	        if (!device_get_global_by_ofnode(n, &dev)) {
+	            device_probe(dev);
+	            break;
+	        }
+	        else {
+	            dev_dbg(ethdev, "can't find device for %s!\n", ofnode_get_name(n));
+	        }
+	        n = ofnode_get_parent(n);
+	    }
+	}
+
 	if (uclass_get_device_by_ofnode(UCLASS_MDIO,
 					ofnode_get_parent(phandle.node),
 					&mdiodev)) {

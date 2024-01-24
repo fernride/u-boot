@@ -16,6 +16,7 @@
 #include <linux/delay.h>
 #include <s32-cc/serdes_hwconfig.h>
 #include <s32-cc/xpcs.h>
+#include <stdio.h>
 
 #include "dwc_eth_qos.h"
 

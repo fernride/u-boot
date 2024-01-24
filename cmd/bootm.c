@@ -134,7 +134,7 @@ int do_bootm(struct cmd_tbl *cmdtp, int flag, int argc, char *const argv[])
 #if defined(CONFIG_PPC) || defined(CONFIG_MIPS)
 		BOOTM_STATE_OS_CMDLINE |
 #endif
-		BOOTM_STATE_OS_PREP | BOOTM_STATE_OS_FAKE_GO |
+		/*BOOTM_STATE_OS_PREP |*/ BOOTM_STATE_OS_FAKE_GO |
 		BOOTM_STATE_OS_GO, &images, 1);
 }
 

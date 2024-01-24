@@ -1,0 +1,107 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+/*
+ * Device Tree file for NXP S32G2 SoC family.
+ *
+ * Copyright 2021-2023 NXP
+ *
+ */
+
+#include "s32g.dtsi"
+
+/ {
+	compatible = "nxp,s32g2";
+
+	cpus {
+		cpu-map {
+			cluster0 {
+				core0 {
+					cpu = <&cpu0>;
+				};
+
+				core1 {
+					cpu = <&cpu1>;
+				};
+			};
+
+			cluster1 {
+				core0 {
+					cpu = <&cpu2>;
+				};
+
+				core1 {
+					cpu = <&cpu3>;
+				};
+			};
+		};
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x0>;
+			enable-method = "psci";
+			clocks = <&dfs S32CC_SCMI_PERF_A53>;
+			next-level-cache = <&cluster0_l2_cache>;
+			#cooling-cells = <2>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x1>;
+			enable-method = "psci";
+			clocks = <&dfs S32CC_SCMI_PERF_A53>;
+			next-level-cache = <&cluster0_l2_cache>;
+			#cooling-cells = <2>;
+		};
+
+		cpu2: cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x100>;
+			enable-method = "psci";
+			clocks = <&dfs S32CC_SCMI_PERF_A53>;
+			next-level-cache = <&cluster1_l2_cache>;
+			#cooling-cells = <2>;
+		};
+
+		cpu3: cpu@101 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0x101>;
+			enable-method = "psci";
+			clocks = <&dfs S32CC_SCMI_PERF_A53>;
+			next-level-cache = <&cluster1_l2_cache>;
+			#cooling-cells = <2>;
+		};
+	};
+
+	reserved-memory {
+		ddr_errata_reserved: ddr@85000000 {
+			reg = <0x0 0x85000000 0x0 0x1000>; /* 4 KB */
+			no-map;
+		};
+	};
+};
+
+&ddr_errata {
+	memory-region = <&ddr_errata_reserved>;
+	status = "okay";
+};
+
+&nvram {
+	compatible = "nxp,s32g2-siul2_0-nvmem";
+};
+
+&qspi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&qspi_pins_200mhz_fast_sre>;
+	status = "okay";
+};
+
+&tmu {
+	fsl,tmu-range = <0xe9 0x101 0x13a 0x18e>;
+	fsl,tmu-calibration = <0 0x2c  0x7c0
+			       1 0x59  0x0
+			       2 0xc6  0x0
+			       3 0x167 0x1f>;
+};

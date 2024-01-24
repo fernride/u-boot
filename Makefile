@@ -1428,6 +1428,10 @@ MKIMAGEFLAGS_u-boot-lzma.img = -A $(ARCH) -T standalone -C lzma -O u-boot \
 	-a $(CONFIG_SYS_TEXT_BASE) -e $(CONFIG_SYS_UBOOT_START) \
 	-n "U-Boot $(UBOOTRELEASE) for $(BOARD) board"
 
+# The HSE Firmware blob is refered to in the .config from the local directory
+u-boot-hse:
+	cp -f $(srctree)/drivers/firmware/blobs/s32cc_hse_fw.bin $(O)
+
 u-boot.bin.lzma: u-boot.bin FORCE
 	$(call if_changed,lzma)
 
@@ -1802,7 +1806,7 @@ cmd_smap = \
 	$(CC) $(c_flags) -DSYSTEM_MAP="\"$${smap}\"" \
 		-c $(srctree)/common/system_map.c -o common/system_map.o
 
-u-boot:	$(u-boot-init) $(u-boot-main) $(u-boot-keep-syms-lto) u-boot.lds FORCE
+u-boot:	u-boot-hse $(u-boot-init) $(u-boot-main) $(u-boot-keep-syms-lto) u-boot.lds FORCE
 	+$(call if_changed,u-boot__)
 ifeq ($(CONFIG_KALLSYMS),y)
 	$(call cmd,smap)

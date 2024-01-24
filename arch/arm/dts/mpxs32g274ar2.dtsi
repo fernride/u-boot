@@ -1,0 +1,82 @@
+/* SPDX-License-Identifier:    GPL-2.0+ */
+/*
+ * Copyright (C) 2023 MicroSys Electronics GmbH
+ *
+ */
+
+/dts-v1/;
+
+#include "s32g2.dtsi"
+#include "mpxs32g.dtsi"
+
+/ {
+	model = "MicroSys MPXS32G274AR2";
+	compatible = "fsl,s32g274-simu", "fsl,s32g274",
+			 "arm,vexpress,v2p-aarch64", "arm,vexpress";
+
+	leds: leds {
+		compatible = "gpio-leds";
+		user0 {
+			label = "module:amber:user";
+			gpios = <&gpio43_0 4 0>;
+			default-state = "off";
+		};
+	};
+
+	aliases {
+		rtc0 = &pcf85263;
+		rtc1 = &{/soc/rtc@40060000};
+	};
+};
+
+&i2c0 {
+	gpio43_0: gpio@43 {
+		compatible = "fcs,fxl6408";
+		gpio-controller;
+		#gpio-cells = <2>;
+		reg = <0x43>;
+		direction = [10];
+		input-default-state = [0f];
+		output-default-state = [00];
+		pull-config = [10 0f]; /* pull-enable / pull-up/down */
+		/* PC03 GPIO[35]/EIRQ[15] on Rev. 2 */
+		interrupt-parent = <&gpio>;
+		interrupts = <35 IRQ_TYPE_EDGE_FALLING>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+
+		gpio-line-names = "THRM_ALRT", "THRM_FLT", "RTC_IRQA", "RTC_IRQB",
+				"USER_LED", "HW_REV2", "HW_REV1", "HW_REV0";
+	};
+
+	pcf85263: rtc@51 {
+		compatible = "pcf85263";
+		reg = <0x51>;
+		// IRQ: RTC_IRQ#
+		/*
+		interrupt-parent = <&gpio43_0>;
+		interrupts = <2 IRQ_TYPE_EDGE_FALLING>, // IRQA#
+				<3 IRQ_TYPE_EDGE_FALLING>; // IRQB#
+		interrupt-names = "INTA", "INTB";
+		*/
+	};
+
+	eeprom@54 {
+		compatible = "atmel,24c128";
+		reg = <0x54>;
+		pagesize = <64>;
+	};
+};
+
+&tmp451_0 {
+	// IRQ: THERM_FAULT# and THERM_ALERT#
+	/*
+	interrupt-parent = <&gpio43_0>;
+	interrupts = <0 IRQ_TYPE_EDGE_FALLING>, // THERM_ALERT# == TMP451.ALERT#
+			<1 IRQ_TYPE_EDGE_FALLING>; // THERM_FAULT# == TMP451.THERM#
+	interrupt-names = "ALERT", "THERM";
+	*/
+	#limit-cells = <4>;
+	limits = <0x00 0xff 0xb4 0x8b>, // Local Temp.:  <-64 191 120 75>
+		<0x00 0xff 0xff 0x00>; // Remote Temp.: <-64 191 191  0>
+};

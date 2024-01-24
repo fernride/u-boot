@@ -1,0 +1,398 @@
+/*
+ * Copyright 2019 NXP
+ * Copyright (C) 2020 MicroSys Electronics GmbH
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ */
+
+#include "mpxs32g274ar2.dtsi"
+
+#define S32_GEN1_PAD_PF00__SPI0_CS7_OUT  80 (PAD_CTL_SPI_MSCR_CSx | PAD_CTL_SRC_SIG_SEL4)
+
+/ {
+    model = "MicroSys S32G274AR2SBC3/2.5Gb";
+    compatible = "fsl,s32g274-simu", "fsl,s32g274",
+                 "arm,vexpress,v2p-aarch64", "arm,vexpress";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+};
+
+&leds {
+	user1 {
+		label = "carrier:green:user";
+		gpios = <&gpio44_1 4 0>;
+		default-state = "off";
+	};
+
+	user2 {
+		label = "carrier:red:user";
+		gpios = <&gpio44_1 5 0>;
+		default-state = "off";
+	};
+};
+
+&llce_dte_sram {
+	status = "okay";
+};
+
+&llce_ppe_rx_sram {
+	status = "okay";
+};
+
+&llce_ppe_tx_sram {
+	status = "okay";
+};
+
+&llce_frpe_sram {
+	status = "okay";
+};
+
+&llce_shmem {
+	status = "okay";
+};
+
+&llce_boot_status {
+	status = "okay";
+};
+
+&llce_can0 {
+	status = "okay";
+};
+
+&llce_can1 {
+	status = "okay";
+};
+
+&llce_can2 {
+	status = "okay";
+};
+
+&llce_can3 {
+	status = "okay";
+};
+
+&llce_can4 {
+	status = "okay";
+};
+
+&llce_can5 {
+	status = "okay";
+};
+
+&llce_can6 {
+	status = "okay";
+};
+
+&llce_can7 {
+	status = "okay";
+};
+
+&llce_can8 {
+	status = "okay";
+};
+
+&llce_can9 {
+	status = "okay";
+};
+
+&llce_can10 {
+	status = "okay";
+};
+
+&llce_can11 {
+	status = "okay";
+};
+
+&llce_can12 {
+	status = "okay";
+};
+
+&llce_can13 {
+	status = "okay";
+};
+
+&llce_can14 {
+	status = "okay";
+};
+
+&llce_can15 {
+	status = "okay";
+};
+
+&serdes0 {
+	nxp,sys-mode = <PCIE_XPCS0_MODE>;
+};
+
+&serdes1 {
+	nxp,sys-mode = <XPCSX2_MODE>;
+};
+
+&gmac0 {
+	status = "okay";
+	phy-mode = "sgmii";
+	phy-handle = <&phy0>;
+};
+
+&pfe {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pfe1mdioc_pins>,
+			<&pfe1rgmiic_pins>,
+			<&pfe2mdiob_pins>,
+			<&pfe2rgmiib_pins>;
+	phys = <&serdes1 PHY_TYPE_XPCS 0 0>, /* PFE0: XPCS0 Lane0 */
+	       <&serdes1 PHY_TYPE_XPCS 1 1>, /* PFE1 not used */
+	       <&serdes0 PHY_TYPE_XPCS 1 1>; /* PFE2 not used */
+};
+
+&pfe_netif0 {
+	status = "okay";
+	phy-mode = "sgmii";
+	max-speed = <2500>;
+	fixed-link {
+		full-duplex;
+		speed = <2500>;
+	};
+};
+
+&pfe_netif1 {
+	status = "okay";
+	phy-handle = <&phy3>;
+	phy-mode = "rgmii-id";
+};
+
+&pfe_netif2 {
+	status = "okay";
+	phy-handle = <&phy1>;
+	phy-mode = "rgmii-id";
+};
+
+&pfe_mdio1 {
+	status = "okay";
+
+	phy3: ethernet-phy@3 { /* PFE1 RGMII */
+		reg = <3>;
+		/*interrupt-parent = <&gpio43_1>;
+		interrupts = <4 IRQ_TYPE_EDGE_FALLING>;*/
+	};
+};
+
+&pfe_mdio2 {
+	status = "okay";
+
+	phy0: ethernet-phy@0 { /* GMAC0 SGMII SerDes0 Lane1 */
+		reg = <0>;
+		/*interrupt-parent = <&gpio43_1>;
+		interrupts = <4 IRQ_TYPE_EDGE_FALLING>;*/
+	};
+
+	phy1: ethernet-phy@1 { /* PFE2 RGMII */
+		reg = <1>;
+		/*interrupt-parent = <&gpio43_1>;
+		interrupts = <4 IRQ_TYPE_EDGE_FALLING>;*/
+	};
+
+	phy8: ethernet-phy@8 { /* T1@SJA1110 */
+		reg = <8>;
+		max-speed = <100>;
+	};
+
+	phy9: ethernet-phy@9 { /* T1@SJA1110 */
+		reg = <9>;
+		max-speed = <100>;
+	};
+
+	phya: ethernet-phy@a { /* T1@SJA1110 */
+		reg = <0xa>;
+		max-speed = <100>;
+	};
+
+	phyb: ethernet-phy@b { /* T1@SJA1110 */
+		reg = <0xb>;
+		max-speed = <100>;
+	};
+
+	phyc: ethernet-phy@c { /* T1@SJA1110 */
+		reg = <0xc>;
+		max-speed = <100>;
+	};
+
+	phyd: ethernet-phy@d { /* T1@SJA1110 */
+		reg = <0xd>;
+		max-speed = <100>;
+	};
+};
+
+&i2c1 {
+	status = "okay";
+
+	gpio43_1: gpio@43 {
+		compatible = "fcs,fxl6408";
+		gpio-controller;
+		#gpio-cells = <2>;
+		reg = <0x43>;
+		direction = [48];
+		input-default-state = [3e];
+		output-default-state = [08];
+		pull-config = [00 3f]; /* pull-enable / pull-up/down */
+		/* PB15 GPIO[31]/EIRQ[12] */
+		interrupt-parent = <&gpio>;
+		interrupts = <31 IRQ_TYPE_EDGE_FALLING>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+
+		/*
+		 * Pin             Function           Direction    Polarity    State
+		 * =================================================================
+		 * GPIO0           SJA1124_STAT       in           high        low
+		 * GPIO1           SJA1124_INT#       in           low         high
+		 * GPIO2           AETH_IRQ#          in           low         high
+		 * GPIO3           AETH_RST_CORE#     out          low         high
+		 * GPIO4           LAN_IRQ#           in           low         high
+		 * GPIO5           SD_CD#             in           low         high
+		 * GPIO6           LIN_SLP            out          high        low
+		 * GPIO7           n/c                xxx          xxx         xxx
+		 *
+		 * Note: GPIO7 was CAN_STB on Rev.1. This function has been moved to GPIO7 at GPIO@44
+		 * below. There this pin is called STBY_ON# with reversed polarity!
+		 */
+
+		 ngpios = <8>;
+
+		 gpio-line-names = "SJA1124_STAT", "SJA1124_INT", "SJA1110_IRQ", "SJA1110_RST_CORE",
+						   "PHYS_IRQ", "SD_CD", "LIN_SLP", "7";
+
+		 sja1110_rst_core {
+			 gpio-hog;
+			 gpios = <3 GPIO_ACTIVE_LOW>;
+			 output-high;
+			 line-name = "sja1110-reset-core";
+		 };
+
+		 lin_slp {
+			 gpio-hog;
+			 gpios = <6 GPIO_ACTIVE_HIGH>;
+			 output-low;
+			 line-name = "lin-sleep";
+		 };
+
+	};
+
+	gpio44_1: gpio@44 {
+		compatible = "fcs,fxl6408";
+		gpio-controller;
+		#gpio-cells = <2>;
+		reg = <0x44>;
+		direction = [f5];
+		input-default-state = [00];
+		output-default-state = [c1];
+		pull-config = [84 f5]; /* pull-enable / pull-up/down */
+
+		/*
+		 * Pin             Function           Direction    Polarity    State
+		 * =================================================================
+		 * GPIO0           SERDES_SEL         out          high        high
+		 * GPIO1           KL15_IN            in           high        low
+		 * GPIO2           KL15_HOLD          out          high        high
+		 * GPIO3           n/c                xxx          xxx         xxx
+		 * GPIO4           LED1               out          high        low
+		 * GPIO5           LED2               out          high        low
+		 * GPIO6           CANSIC_EN          out          high        high
+		 * GPIO7           STBY_ON#           out          low         high
+		 *
+		 * Note 1: STBY_ON# was GPIO7 at GPIO@43 above on Rev.1. There is pin was called
+		 * CAN_STB with reversed polarity!
+		 *
+		 * Note 2: STBY_ON# controlls whether the CAN-bus tranceivers are in standby mode.
+		 * If STBY_ON# is high the transceivers are active and functional.
+		 */
+
+		ngpios = <8>;
+		//gpio-reserved-ranges = <1 5>;
+		gpio-line-names = "SERDES_SEL",
+			"KL15_IN", "KL15_HOLD", "3", "LED1", "LED2",
+			"CANSIC_EN", "CAN_STBY_ON";
+
+	};
+};
+
+&i2c2 {
+	status = "okay";
+};
+
+&usdhc0 {
+	status = "okay";
+	cd = <&gpio43_1 5 GPIO_ACTIVE_LOW>;
+};
+
+&can2 {
+	status = "okay";
+};
+
+&can3 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	sja1110-uc@2 {
+		compatible = "nxp,sja1110-uc";
+		spi-max-frequency = <5000000>;
+		fsl,spi-cs-sck-delay = <50>;
+		fsl,spi-sck-cs-delay = <50>;
+		reg = <2>;
+	};
+
+	sja1110-sw@1 {
+		compatible = "nxp,sja1110-switch";
+		spi-max-frequency = <5000000>;
+		fsl,spi-cs-sck-delay = <50>;
+		fsl,spi-sck-cs-delay = <50>;
+		reg = <1>;
+		reset-gpio = <&gpio43_1 3 GPIO_ACTIVE_LOW>;
+
+		ngpios = <16>;
+		gpio-line-names = "0", "1", "2", "3", "4", "5", "6", "7",
+				"8", "9", "10", "11", "12", "13",
+				"LAN_100_LED_YELLOW", "LAN_100_LED_GREEN";
+	};
+
+	sja1110-per-ss1@7 {
+		compatible = "nxp,sja1110-per-ss1";
+		spi-max-frequency = <5000000>;
+		fsl,spi-cs-sck-delay = <50>;
+		fsl,spi-sck-cs-delay = <50>;
+		reg = <7>;
+		status = "disabled";
+	};
+};
+
+&spi5 {
+	status = "disabled";
+
+	spidev@0 {
+		compatible = "nxp,sja1124";
+		spi-cpha;
+		spi-max-frequency = <100000>;
+		fsl,spi-cs-sck-delay = <100>;
+		fsl,spi-sck-cs-delay = <100>;
+		reg = <0>;
+		status = "disabled";
+	};
+
+};
+
+&pcie0 {
+	status = "okay";
+};
+
+&pcie1 {
+	status = "disabled";
+};

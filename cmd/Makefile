@@ -192,6 +192,10 @@ obj-$(CONFIG_CMD_PVBLOCK) += pvblock.o
 obj-$(CONFIG_CMD_PMIC) += pmic.o
 obj-$(CONFIG_CMD_REGULATOR) += regulator.o
 
+SRC = $(realpath $(srctree))
+
+obj-y += ../board/nxp/s32-cc/s32g/s32gxxxardb.o
+
 obj-$(CONFIG_CMD_BLOB) += blob.o
 
 # Android Verified Boot 2.0

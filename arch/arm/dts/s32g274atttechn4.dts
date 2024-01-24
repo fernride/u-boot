@@ -1,0 +1,98 @@
+//#include "mpxs32g274ar2.dtsi"
+
+/dts-v1/;
+#include <dt-bindings/gpio/gpio.h>
+#include "s32g2.dtsi"
+
+/ {
+    model = "TTTech S32G274A N4/2.5Gb";
+    compatible = "fsl,s32g274-simu", "fsl,s32g274",
+                 "arm,vexpress,v2p-aarch64", "arm,vexpress";
+
+	chosen {
+		stdout-path = "serial0:115200n8";
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&led_pins>;
+
+		debug0 {
+			label = "debug0";
+			gpios = <&gpio 178 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+			default-state = "on";
+		};
+
+		debug1 {
+			label = "debug1";
+			gpios = <&gpio 180 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+			default-state = "on";
+		};
+
+		debug2 {
+			label = "debug2";
+			gpios = <&gpio 181 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+			default-state = "on";
+		};
+	};
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&edma1 {
+	status = "okay";
+};
+
+&fccu {
+	status = "okay";
+};
+
+&generic_timer {
+	clock-frequency = <5000000>;
+};
+
+&pinctrl {
+	uart0_pins: uart0_pins {
+		uart0_pins_grp0 {
+			pinmux = <S32CC_PINMUX(41, FUNC1)>;
+			output-enable;
+			slew-rate = <S32CC_GPIO_3V3_SLEW_50MHZ>;
+		};
+
+		uart0_pins_grp1 {
+			pinmux = <S32CC_PINMUX(42, FUNC0)>;
+			input-enable;
+			slew-rate = <S32CC_GPIO_3V3_SLEW_50MHZ>;
+		};
+
+		uart0_pins_grp2 {
+			pinmux = <S32CC_PINMUX(512, FUNC2)>;
+		};
+	};
+
+	led_pins: led_pins {
+		led_pins_grp0 {
+			pinmux = <S32CC_PINMUX(178, FUNC0)>, <S32CC_PINMUX(180, FUNC0)>, <S32CC_PINMUX(181, FUNC0)>;
+			drive-open-drain;
+			output-enable;
+			slew-rate = <S32CC_GPIO_3V3_SLEW_50MHZ>;
+		};
+	};
+};
+
+&pit0 {
+	status = "okay";
+};
+
+&pit1 {
+	status = "okay";
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};

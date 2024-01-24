@@ -1,0 +1,21 @@
+if TARGET_S32G274ATTTECHN4
+
+config SYS_CONFIG_NAME
+	default "s32g274atttechn4"
+
+config SYS_BOARD
+	default "s32g274atttechn4"
+
+config SYS_VENDOR
+	default "tttech"
+
+config NR_DRAM_BANKS
+	default 2
+
+config SYS_DATA_BASE
+	default 0xdfa00000
+
+config SYS_TEXT_BASE
+	default 0xdfaa0000
+
+endif

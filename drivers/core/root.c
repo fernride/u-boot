@@ -202,6 +202,43 @@ int dm_init(bool of_live)
 	return 0;
 }
 
+#if CONFIG_IS_ENABLED(OF_LIVE)
+static int dm_scan_fdt_live(struct udevice *parent,
+			    const struct device_node *node_parent,
+			    bool pre_reloc_only)
+{
+	struct device_node *np;
+	int ret = 0, err;
+
+	for (np = node_parent->child; np; np = np->sibling) {
+		/* "chosen" node isn't a device itself but may contain some: */
+		if (!strcmp(np->name, "chosen")) {
+			pr_debug("parsing subnodes of \"chosen\"\n");
+
+			err = dm_scan_fdt_live(parent, np, pre_reloc_only);
+			if (err && !ret)
+				ret = err;
+			continue;
+		}
+
+		if (!of_device_is_available(np)) {
+			pr_debug("   - ignoring disabled device\n");
+			continue;
+		}
+		err = lists_bind_fdt(parent, np_to_ofnode(np), NULL,
+				     NULL, pre_reloc_only);
+		if (err && !ret) {
+			ret = err;
+		}
+	}
+
+	if (ret)
+		dm_warn("Some drivers failed to bind\n");
+
+	return ret;
+}
+#endif /* CONFIG_IS_ENABLED(OF_LIVE) */
+
 int dm_uninit(void)
 {
 	/* Remove non-vital devices first */
@@ -298,6 +335,13 @@ int dm_scan_fdt_dev(struct udevice *dev)
 
 int dm_scan_fdt(bool pre_reloc_only)
 {
+#if CONFIG_IS_ENABLED(OF_LIVE)
+	if (of_live_active())
+		return dm_scan_fdt_live(gd->dm_root, gd->of_root,
+					pre_reloc_only);
+	else
+#endif
+	//return dm_scan_fdt_node(gd->dm_root, blob, 0, pre_reloc_only);
 	return dm_scan_fdt_node(gd->dm_root, ofnode_root(), pre_reloc_only);
 }
 
@@ -308,6 +352,30 @@ static int dm_scan_fdt_ofnode_path(const char *path, bool pre_reloc_only)
 	node = ofnode_path(path);
 
 	return dm_scan_fdt_node(gd->dm_root, node, pre_reloc_only);
+}
+
+int dm_extended_scan_fdt(const void *blob, bool pre_reloc_only)
+{
+	int ret;
+
+	(void)blob;
+	ret = dm_scan_fdt(pre_reloc_only);
+	if (ret) {
+		debug("dm_scan_fdt() failed: %d\n", ret);
+		return ret;
+	}
+
+	ret = dm_scan_fdt_ofnode_path("/clocks", pre_reloc_only);
+	if (ret) {
+		debug("scan for /clocks failed: %d\n", ret);
+		return ret;
+	}
+
+	ret = dm_scan_fdt_ofnode_path("/firmware", pre_reloc_only);
+	if (ret)
+		debug("scan for /firmware failed: %d\n", ret);
+
+	return ret;
 }
 
 int dm_extended_scan(bool pre_reloc_only)
@@ -388,22 +456,47 @@ static int dm_scan(bool pre_reloc_only)
 	return 0;
 }
 
+int dm_scan_platdata(bool pre_reloc_only)
+{
+	int ret;
+
+	ret = lists_bind_drivers(DM_ROOT_NON_CONST, pre_reloc_only);
+	if (ret == -ENOENT) {
+		dm_warn("Some drivers were not found\n");
+		ret = 0;
+	}
+
+	return ret;
+}
+
 int dm_init_and_scan(bool pre_reloc_only)
 {
 	int ret;
 
-	ret = dm_init(CONFIG_IS_ENABLED(OF_LIVE));
+	ret = dm_init(IS_ENABLED(CONFIG_OF_LIVE));
 	if (ret) {
 		debug("dm_init() failed: %d\n", ret);
 		return ret;
 	}
-	if (!CONFIG_IS_ENABLED(OF_PLATDATA_INST)) {
-		ret = dm_scan(pre_reloc_only);
+
+	ret = dm_scan_platdata(pre_reloc_only);
+	if (ret) {
+		debug("dm_scan_platdata() failed: %d\n", ret);
+		return ret;
+	}
+
+	if (CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA)) {
+		ret = dm_extended_scan_fdt(gd->fdt_blob, pre_reloc_only);
+
 		if (ret) {
-			log_debug("dm_scan() failed: %d\n", ret);
+			debug("dm_extended_scan_dt() failed: %d\n", ret);
 			return ret;
 		}
 	}
+
+	ret = dm_scan_other(pre_reloc_only);
+	if (ret)
+		return ret;
 
 	return 0;
 }

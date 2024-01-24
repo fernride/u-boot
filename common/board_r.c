@@ -590,6 +590,8 @@ static int run_main_loop(void)
 	return 0;
 }
 
+//second stage
+
 /*
  * We hope to remove most of the driver-related init and do it if/when
  * the driver is later used.
@@ -652,9 +654,9 @@ static init_fnc_t init_sequence_r[] = {
 #endif
 	initr_dm_devices,
 	stdio_init_tables,
-	serial_initialize,
+	//serial_initialize,
 	initr_announce,
-	dm_announce,
+	//dm_announce,
 #if CONFIG_IS_ENABLED(WDT)
 	initr_watchdog,
 #endif
@@ -700,7 +702,7 @@ static init_fnc_t init_sequence_r[] = {
 	initr_onenand,
 #endif
 #ifdef CONFIG_MMC
-	initr_mmc,
+	//initr_mmc,
 #endif
 #ifdef CONFIG_XEN
 	xen_init,

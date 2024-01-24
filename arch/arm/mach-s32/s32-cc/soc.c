@@ -303,7 +303,7 @@ int arch_cpu_init(void)
 		debug_uart_init();
 
 	/* Enable MMU and caches early to speed-up boot process */
-	return early_mmu_init();
+	return 0;//early_mmu_init();
 }
 
 int arch_cpu_init_dm(void)

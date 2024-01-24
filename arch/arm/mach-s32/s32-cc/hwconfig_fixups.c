@@ -31,6 +31,8 @@
 #define SERDES_LINE_NAME_LEN		sizeof(SERDES_LINE_NAME_FMT)
 
 #define ETH_ALIAS_FMT			"ethernet%d"
+#define GMAC_ALIAS_FMT			"gmac%d"
+#define PFE_ALIAS_FMT			"pfe%d"
 
 #define SERDES_COUNT			2
 #define XPCS_COUNT			2
@@ -40,6 +42,10 @@
 #define MAX_PATH_SIZE			100UL
 
 #define EMAC_ID_INVALID			(u32)(-1)
+
+#define MAX_PROP_ALLOC			(500)
+
+#define MAX_PFE_EMAC_PHYIF_ID		2
 
 struct dts_node {
 	union {
@@ -1026,8 +1032,12 @@ static int node_create_subnode(struct dts_node *node, struct dts_node *subnode,
 static int get_xpcs_node_from_alias(struct dts_node *root, struct dts_node *node,
 				    int serdes_id, int xpcs_id)
 {
+	static const char * const xpcs_fmts[SERDES_COUNT][XPCS_COUNT] = {
+		{GMAC_ALIAS_FMT, PFE_ALIAS_FMT},
+		{PFE_ALIAS_FMT, PFE_ALIAS_FMT}
+		};
 	static const u32 xpcs_ids[SERDES_COUNT][XPCS_COUNT] = {
-		{0, 3}, {1, 2}
+		{0, 2}, {0, 1}
 		};
 
 	/* Validate arguments. */
@@ -1037,7 +1047,9 @@ static int get_xpcs_node_from_alias(struct dts_node *root, struct dts_node *node
 		return -EINVAL;
 	}
 
-	return node_by_alias(root, node, ETH_ALIAS_FMT, xpcs_ids[serdes_id][xpcs_id]);
+	return node_by_alias(root, node,
+			     xpcs_fmts[serdes_id][xpcs_id],
+			     xpcs_ids[serdes_id][xpcs_id]);
 }
 
 static int set_xpcs_config_sgmii(struct dts_node *root, int serdes_id,
