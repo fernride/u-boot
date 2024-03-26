@@ -2323,8 +2323,8 @@ int init_100base_tx_port1(struct sja_parms *sjap) {
 
 	// Step 3: Force mode by programming BASIC_CONTROL registers
     // Disable auto negotiation, and based on requirement configure 100M or 10M mode
-	// Programming it for 100M FD
-	ret = sja1105_write_reg32_v2(sjap, TX_100BASE_BASE_ADDR, TX_100BASE_BASIC_CONTROL_REG, 0x2100);
+	// Programming it for 100M FD and Auto Negotiation=1
+	ret = sja1105_write_reg32_v2(sjap, TX_100BASE_BASE_ADDR, TX_100BASE_BASIC_CONTROL_REG, 0x3100);
 	if (ret < 0) {
 		printf("Error setting 100M FD\n");
 		return ret;
