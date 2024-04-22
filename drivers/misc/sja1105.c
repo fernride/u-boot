@@ -2361,7 +2361,7 @@ int init_100base_tx_port1(struct sja_parms *sjap) {
 
 // Port 1 is 100BASE-TX
 //Port 3 is SGMII
-int init_ports_fernride(struct udevice *dev) {
+int init_ports_fernride(struct udevice *dev, int init_100basetx) {
 	struct sja_parms *sjap = dev_get_priv(dev);
 	unsigned int val;
 	int ret;
@@ -2382,11 +2382,13 @@ int init_ports_fernride(struct udevice *dev) {
 		return ret;
 	}
 
-	printf("SJA1110: Initializing 100BASE-TX port\n");
-	ret = init_100base_tx_port1(sjap);
-	if (ret < 0) {
-		printf("Error initializing 100base-tx port1\n");
-		return ret;
+	if (init_100basetx) {
+		printf("SJA1110: Initializing 100BASE-TX port\n");
+		ret = init_100base_tx_port1(sjap);
+		if (ret < 0) {
+			printf("Error initializing 100base-tx port1\n");
+			return ret;
+		}
 	}
 
 	return 0;
@@ -2496,7 +2498,9 @@ static int do_sja_cmd(struct cmd_tbl *cmdtp, int flag, int argc, char * const ar
 		if (ret)
 			return CMD_RET_FAILURE;
 	} else if (!strcmp(argv[1], "init_ports")) {
-		ret = init_ports_fernride(dev);
+		ret = init_ports_fernride(dev, 0);
+	} else if (!strcmp(argv[1], "init_100basetx")) {
+		ret = init_ports_fernride(dev, 1);
 	} else if (!strcmp(argv[1], "speed")) {
 		if (argc >= 3 && !strchr(argv[2], ':'))
 			options = argv[2];
@@ -2516,7 +2520,8 @@ U_BOOT_CMD(
 	"sja info [<bus>:]<cs> - View registers for SJA\n"
 	"sja spi [0(read)|1(write)] [0xbase] [0xoffset] [val(if write)]\n"
 	"sja sgmii [0(read)|1(write)] [1-5(port)] [0xbase] [0xoffset] [val(if write)]\n"
-	"sja init_ports 2:0 - Set ports according to FERNRIDE specifications\n"
+	"sja init_ports 2:0 - Only init SJA port 3\n"
+	"sja init_100basetx 2:0 - Init 100basetxport along with SJA port 3\n"
 	"sja load_config 2:0 - load configuration file\n"
 	"sja speed [<bus>:]<cs> - Read configured speed on all ports\n"
 	"sja speed [p0speed,p1speed,p2speed,p3speed,p3speed] [<bus>:]<cs> - Set speed\n"
