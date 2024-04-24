@@ -94,6 +94,8 @@
 	BOOTENV \
 	"boot_mtd=booti\0" \
 	"console=ttyLF0\0" \
+	"eolflashm7bl=sja init_ports 2:0; tftp 0x80000000 safe_bootloader.bin; mmc list; mmc write 0x80000000 8 20\0"  \
+	"eolswitchtom7boot=mmc list; mmc read 0x80000000 0 0x20; mw 0x80001028 0x00000000; mw 0x80001200 0x600000d5; mmc erase 0 1; mmc write 0x80000000 0 0x20\0" \
 	"fdt_addr=" __stringify(S32CC_FDT_ADDR) "\0" \
 	"fdt_enable_hs400es=" \
 		"fdt addr ${fdt_addr}; " \
