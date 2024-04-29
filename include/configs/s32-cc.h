@@ -94,8 +94,13 @@
 	BOOTENV \
 	"boot_mtd=booti\0" \
 	"console=ttyLF0\0" \
-	"eolflashm7bl=sja init_ports 2:0; tftp 0x80000000 safe_bootloader.bin; mmc list; mmc write 0x80000000 8 20\0"  \
-	"eolswitchtom7boot=mmc list; mmc read 0x80000000 0 0x20; mw 0x80001028 0x00000000; mw 0x80001200 0x600000d5; mmc erase 0 1; mmc write 0x80000000 0 0x20\0" \
+	"eol_safe_bootloader_name=safe_bootloader.bin\0" \
+	"eol_bootloader_tmp_address=0x80001000\0" \
+	"eol_image_magic_address 0x80000000\0" \
+	"eol_switch_ivt_to_safe_bootloader=mmc read 0x80000000 0 0x20; mw 0x80001028 0x00000000; mw 0x80001200 0x600000d5; mmc write 0x80000000 0 0x20;\0" \
+	"eol_flash_safe_bootloader_image=mmc list; mmc write ${bootloader_tmp_address} 9 100;\0" \
+	"eol_verify_safe_bootloader_image=mw.l ${image_magic_address} 600000d5; if cmp.l ${image_magic_address} ${bootloader_tmp_address} 1; then run flash_safe_bootloader_image; else echo \"Failed to verify the image.\" && exit -1; fi;\0" \
+	"eol_download_safe_bootloader_image=sja init_ports 2:0; if tftp ${bootloader_tmp_address} ${safe_bootloader_name}; then run verify_safe_bootloader_image; else echo \"Failed to download the safe bootloader image\" && exit -1; fi\0" \
 	"fdt_addr=" __stringify(S32CC_FDT_ADDR) "\0" \
 	"fdt_enable_hs400es=" \
 		"fdt addr ${fdt_addr}; " \
@@ -117,11 +122,13 @@
 	"initrd_high=" __stringify(S32CC_INITRD_HIGH_ADDR) "\0" \
 	"ipaddr=" S32CC_IPADDR "\0"\
 	"tftpdstp=6969\0 " \
+	"loadaddr=0x8007ffc0\0" \
 	"loadfdt=fatload mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}; " \
 		 "run fdt_override;\0" \
 	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
 	"loadtftpfdt=tftp ${fdt_addr} ${fdt_file};\0" \
 	"loadtftpimage=tftp ${loadaddr} ${image};\0" \
+	"tftpboot=sja init_ports 2:0; run loadtftpimage; bootm 0x8007ffc0\0"\
 	"mmcargs=setenv bootargs console=${console},${baudrate}" \
 		" root=${mmcroot} earlycon " EXTRA_BOOT_ARGS "\0" \
 	"mmcboot=echo Booting from mmc ...; " \
