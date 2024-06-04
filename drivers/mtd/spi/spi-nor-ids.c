@@ -151,6 +151,8 @@ const struct flash_info spi_nor_ids[] = {
 			SPI_NOR_4B_OPCODES) },
 	{ INFO("is25wp512",  0x9d701a, 0, 64 * 1024, 1024,
 			SECT_4K | SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ) },
+	{ INFO("is25wx128",  0x9d5b19, 0, 128 * 1024, 128,
+			SECT_4K | USE_FSR | SPI_NOR_OCTAL_READ | SPI_NOR_4B_OPCODES) },
 #endif
 #ifdef CONFIG_SPI_FLASH_MACRONIX	/* MACRONIX */
 	/* Macronix */
@@ -260,6 +262,7 @@ const struct flash_info spi_nor_ids[] = {
 		SPI_NOR_DUAL_READ | SPI_NOR_QUAD_READ | SPI_NOR_4B_OPCODES) },
 #ifdef CONFIG_SPI_FLASH_S28HS512T
 	{ INFO("s28hs512t",  0x345b1a,      0, 256 * 1024, 256, SPI_NOR_OCTAL_DTR_READ) },
+	{ INFO("s28hs256t",  0x345b19,      0, 256 * 1024, 128, SPI_NOR_OCTAL_DTR_READ) },
 #endif
 #endif
 #ifdef CONFIG_SPI_FLASH_SST		/* SST */
