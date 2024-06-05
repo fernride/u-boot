@@ -3848,7 +3848,7 @@ void spi_nor_set_fixups(struct spi_nor *nor)
 #endif
 
 #ifdef CONFIG_SPI_FLASH_S28HS512T
-	if (!strcmp(nor->info->name, "s28hs512t"))
+	if (!strcmp(nor->info->name, "s28hs512t") || !strcmp(nor->info->name, "s28hs256t"))
 		nor->fixups = &s28hs512t_fixups;
 #endif
 
