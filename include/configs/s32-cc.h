@@ -128,7 +128,7 @@
 	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
 	"loadtftpfdt=tftp ${fdt_addr} ${fdt_file};\0" \
 	"loadtftpimage=tftp ${loadaddr} ${image};\0" \
-	"tftpboot=sja init_ports 2:0; run loadtftpimage; bootm 0x8007ffc0\0"\
+	"tftpboot=sja init_100basetx 2:0; run loadtftpimage; bootm ${loadaddr}\0"\
 	"mmcargs=setenv bootargs console=${console},${baudrate}" \
 		" root=${mmcroot} earlycon " EXTRA_BOOT_ARGS "\0" \
 	"mmcboot=echo Booting from mmc ...; " \
@@ -260,14 +260,11 @@
 #      define CONFIG_BOOTCOMMAND XEN_BOOTCMD
 #    else
 #      define CONFIG_BOOTCOMMAND \
-	"sja init_ports 2:0; " \
-	"mmc dev ${mmcdev}; " \
-	"if mmc rescan; " \
+	"sja init_100basetx 2:0; " \
+	"mmc list; " \
+	"if run loadimage; "\
 	"then " \
-		"if run loadimage; "\
-		"then " \
-			"run mmcboot; " \
-		"fi; " \
+		"bootm ${loadaddr}; " \
 	"fi; " \
 	"run init_mmc_fs"
 #    endif
