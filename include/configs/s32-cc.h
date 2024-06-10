@@ -263,7 +263,7 @@
 	"sja init_100basetx 2:0; " \
 	"run init_mmc_fs; " \
 	"run loadimage || run loadtftpimage; " \
-	"bootm ${loadaddr}; " \
+	"bootm ${loadaddr}; " 
 #    endif
 #  endif
 #endif
