@@ -94,13 +94,15 @@
 	BOOTENV \
 	"boot_mtd=booti\0" \
 	"console=ttyLF0\0" \
-	"eol_safe_bootloader_name=safe_bootloader.bin\0" \
+	"eol_safe_bootloader_name=bootloader_a_b_binary.bin\0" \
 	"eol_bootloader_tmp_address=0x80001000\0" \
-	"eol_image_magic_address 0x80000000\0" \
-	"eol_switch_ivt_to_safe_bootloader=mmc read 0x80000000 0 0x20; mw 0x80001028 0x00000000; mw 0x80001200 0x600000d5; mmc write 0x80000000 0 0x20;\0" \
-	"eol_flash_safe_bootloader_image=mmc list; mmc write ${bootloader_tmp_address} 9 100;\0" \
-	"eol_verify_safe_bootloader_image=mw.l ${image_magic_address} 600000d5; if cmp.l ${image_magic_address} ${bootloader_tmp_address} 1; then run flash_safe_bootloader_image; else echo \"Failed to verify the image.\" && exit -1; fi;\0" \
-	"eol_download_safe_bootloader_image=run netinit' if tftp ${bootloader_tmp_address} ${safe_bootloader_name}; then run verify_safe_bootloader_image; else echo \"Failed to download the safe bootloader image\" && exit -1; fi\0" \
+	"eol_image_magic_address=0x80000000\0" \
+	"eol_invalidate_a_partition=mmc list; mmc read ${eol_bootloader_tmp_address} 9 1; mw ${eol_bootloader_tmp_address} 0xdeaddead; mmc write ${eol_bootloader_tmp_address} 9 1;\0" \
+	"eol_invalidate_b_partition=mmc list; mmc read ${eol_bootloader_tmp_address} 0xC00 1; mw ${eol_bootloader_tmp_address} 0xdeaddead; mmc write ${eol_bootloader_tmp_address} 0xC00 1;\0" \
+	"eol_flash_a_partition=mmc list; mmc write ${eol_bootloader_tmp_address} 9 0xBF0;\0" \
+	"eol_flash_b_partition=mmc list; mmc write ${eol_bootloader_tmp_address} 0xC00 0xBF0;\0" \
+	"eol_verify_safe_bootloader_image=mw.l ${eol_image_magic_address} 600000d5; if cmp.l ${eol_image_magic_address} ${eol_bootloader_tmp_address} 1; then run eol_flash_b_partition; else echo \"Failed to verify the image.\" && exit -1; fi;\0" \
+	"eol_download_safe_bootloader_image=run netinit; if tftp ${eol_bootloader_tmp_address} ${eol_safe_bootloader_name}; then run eol_verify_safe_bootloader_image; else echo \"Failed to download the safe bootloader image\" && exit -1; fi\0" \
 	"fdt_addr=" __stringify(S32CC_FDT_ADDR) "\0" \
 	"fdt_enable_hs400es=" \
 		"fdt addr ${fdt_addr}; " \
@@ -130,7 +132,7 @@
 	"loadtftpimage=tftp ${loadaddr} ${image};\0" \
 	"ncip=192.168.0.1\0" \
 	"nc=run netinit; setenv stdout nc; setenv stdin nc;\0" \
-	"netinit=sja init_100basetx 2:0\0" \
+	"netinit=sja init_ports 2:0\0" \
 	"tftpboot=run netinit; run loadtftpimage; bootm ${loadaddr}\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate}" \
 		" root=${mmcroot} earlycon " EXTRA_BOOT_ARGS "\0" \
