@@ -131,8 +131,8 @@
 	"loadtftpfdt=tftp ${fdt_addr} ${fdt_file};\0" \
 	"loadtftpimage=tftp ${loadaddr} ${image};\0" \
 	"ncip=192.168.0.1\0" \
-	"nc=run netinit; setenv stdout nc; setenv stdin nc;\0" \
-	"netinit=sja init_ports 2:0\0" \
+	"nc=setenv stdout serial,nc; setenv stdin serial,nc;\0" \
+	"netinit=sja init_100basetx 2:0\0" \
 	"tftpboot=run netinit; run loadtftpimage; bootm ${loadaddr}\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate}" \
 		" root=${mmcroot} earlycon " EXTRA_BOOT_ARGS "\0" \
