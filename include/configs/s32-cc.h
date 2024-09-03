@@ -157,6 +157,32 @@
 	        "mbr write mmc 0; " \
 	        "mmc mkfs 1000 40000; " \
 	    "fi\0" \
+	"BASE_OFFSET=0x8200000\0" \
+	"bootimgstg=setexpr BASE_OFFSET_BLK $BASE_OFFSET / 0x200; " \
+	"  mmc list; " \
+	"  mmc read 0x80000000 $BASE_OFFSET_BLK 2; " \
+	"  setexpr MAGIC *0x80000000; " \
+	"  if test $MAGIC = 87bf79b4; then " \
+	"    setexpr METADATA_SIZE       *0x80000004; " \
+	"    setexpr IMAGE_METADATA_SIZE *0x8000000C; " \
+	"    setexpr PARTITION_SIZE      *0x80000010; " \
+	"    setexpr CURRENT_PARTITION   *0x80000018; " \
+	"    setexpr PARTITION_OFFSET $BASE_OFFSET + $METADATA_SIZE; " \
+	"    if test $CURRENT_PARTITION = 1; then " \
+	"      setexpr PARTITION_OFFSET $PARTITION_OFFSET + $PARTITION_SIZE; " \
+	"    fi; " \
+	"    setexpr PARTITION_OFFSET_BLK $PARTITION_OFFSET / 0x200; " \
+	"    mmc read 0x80000000 $PARTITION_OFFSET_BLK 2; " \
+	"    setexpr MAGIC *0x80000000; " \
+	"    if test $MAGIC = e84dcdf9; then " \
+	"      setexpr IMAGE_SIZE_BLK *0x8000000C / 0x200; " \
+	"      setexpr IMAGE_SIZE_BLK 1 + $IMAGE_SIZE_BLK; " \
+	"      setexpr IMAGE_OFFSET $PARTITION_OFFSET + $IMAGE_METADATA_SIZE; " \
+	"      setexpr IMAGE_OFFSET_BLK $IMAGE_OFFSET / 0x200; " \
+	"      mmc read 0x80000000 $IMAGE_OFFSET_BLK $IMAGE_SIZE_BLK; " \
+	"      bootm 0x80000000; " \
+	"    fi; " \
+	"  fi\0" \
 	"netargs=setenv bootargs console=${console},${baudrate} " \
 		"root=/dev/nfs " \
 		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp " \
