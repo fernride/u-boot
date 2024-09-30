@@ -65,9 +65,9 @@
 
 #define NFSRAMFS_ADDR			"-"
 #define NFSRAMFS_TFTP_CMD		""
-#define S32CC_IPADDR			"192.168.0.2"
+#define S32CC_IPADDR			"192.168.1.2"
 #define S32CC_NETMASK			"255.255.255.0"
-#define S32CC_SERVERIP			"192.168.0.1"
+#define S32CC_SERVERIP			"192.168.1.1"
 
 #define CONFIG_HWCONFIG
 
@@ -130,9 +130,9 @@
 	"loadimage=fatload mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image}\0" \
 	"loadtftpfdt=tftp ${fdt_addr} ${fdt_file};\0" \
 	"loadtftpimage=tftp ${loadaddr} ${image};\0" \
-	"ncip=192.168.0.1\0" \
+	"ncip=192.168.1.1\0" \
 	"nc=run netinit; setenv stdout nc; setenv stdin nc;\0" \
-	"netinit=sja init_ports 2:0\0" \
+	"netinit=sja init_ports 2:0; mdio write mdio0 1d 1e.8100 4001;\0" \
 	"tftpboot=run netinit; run loadtftpimage; bootm ${loadaddr}\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate}" \
 		" root=${mmcroot} earlycon " EXTRA_BOOT_ARGS "\0" \
@@ -285,7 +285,11 @@
 #else
 #  define BOOTENV
 #  if defined(CONFIG_QSPI_BOOT)
-#    define CONFIG_BOOTCOMMAND "run flashboot"
+#    define CONFIG_BOOTCOMMAND\
+	"run netinit; " \
+	"run init_mmc_fs; " \
+	"run loadimage || run loadtftpimage || run nc; " \
+	"bootm ${loadaddr}; " 
 #  elif defined(CONFIG_SD_BOOT)
 #    if defined(CONFIG_XEN_SUPPORT)
 #      define CONFIG_BOOTCOMMAND XEN_BOOTCMD
