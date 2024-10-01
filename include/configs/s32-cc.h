@@ -94,7 +94,6 @@
 	BOOTENV \
 	"boot_mtd=booti\0" \
 	"console=ttyLF0\0" \
-	"eol_safe_bootloader_name=bootloader_a_b_binary.bin\0" \
 	"eol_bootloader_tmp_address=0x80001000\0" \
 	"eol_image_magic_address=0x80000000\0" \
 	"eol_invalidate_a_partition=mmc list; mmc read ${eol_bootloader_tmp_address} 9 1; mw ${eol_bootloader_tmp_address} 0xdeaddead; mmc write ${eol_bootloader_tmp_address} 9 1;\0" \
@@ -103,6 +102,18 @@
 	"eol_flash_b_partition=mmc list; mmc write ${eol_bootloader_tmp_address} 0xC00 0xBF0;\0" \
 	"eol_verify_safe_bootloader_image=mw.l ${eol_image_magic_address} 600000d5; if cmp.l ${eol_image_magic_address} ${eol_bootloader_tmp_address} 1; then run eol_flash_b_partition; else echo \"Failed to verify the image.\" && exit -1; fi;\0" \
 	"eol_download_safe_bootloader_image=run netinit; if tftp ${eol_bootloader_tmp_address} ${eol_safe_bootloader_name}; then run eol_verify_safe_bootloader_image; else echo \"Failed to download the safe bootloader image\" && exit -1; fi\0" \
+	"eol_qspi_partition_size=0x2FC000\0"\
+	"eol_qspi_a_partition_start=0x4000\0"\
+	"eol_qspi_b_partition_start=0x300000\0"\
+	"eol_flash_qspi_a_partition=sf probe; sf erase ${eol_qspi_a_partition_start} ${eol_qspi_partition_size}; sf write ${eol_bootloader_tmp_address} ${eol_qspi_a_partition_start} ${eol_qspi_partition_size};\0"\
+	"eol_flash_qspi_b_partition=sf probe; sf erase ${eol_qspi_b_partition_start} ${eol_qspi_partition_size}; sf write ${eol_bootloader_tmp_address} ${eol_qspi_b_partition_start} ${eol_qspi_partition_size};\0"\
+	"eol_verify_and_flash_safe_bootloader_image_b=mw.l ${eol_image_magic_address} 600000d5; if cmp.l ${eol_image_magic_address} ${eol_bootloader_tmp_address} 1; then run eol_flash_qspi_b_partition; else echo \"Failed to verify the image.\" && exit -1; fi;\0"\
+	"eol_verify_and_flash_safe_bootloader_image_a=mw.l ${eol_image_magic_address} 600000d5; if cmp.l ${eol_image_magic_address} ${eol_bootloader_tmp_address} 1; then run eol_flash_qspi_a_partition; else echo \"Failed to verify the image.\" && exit -1; fi;\0"\
+	"eol_safe_bootloader_name=n4bl_qspi_ab.bin\0"\
+	"eol_qspi_invalidate_a_partition=sf probe; sf erase ${eol_qspi_a_partition_start} 0x1000;\0"\
+	"eol_qspi_invalidate_b_partition=sf probe; sf erase ${eol_qspi_b_partition_start} 0x1000;\0"\
+	"eol_download_safe_bootloader_image_a=run netinit; if tftp ${eol_bootloader_tmp_address} ${eol_safe_bootloader_name}; then run eol_verify_and_flash_safe_bootloader_image_a; else echo \"Failed to download the safe bootloader image\" && exit -1; fi;\0"\
+	"eol_download_safe_bootloader_image_b=run netinit; if tftp ${eol_bootloader_tmp_address} ${eol_safe_bootloader_name}; then run eol_verify_and_flash_safe_bootloader_image_b; else echo \"Failed to download the safe bootloader image\" && exit -1; fi;\0"\
 	"fdt_addr=" __stringify(S32CC_FDT_ADDR) "\0" \
 	"fdt_enable_hs400es=" \
 		"fdt addr ${fdt_addr}; " \
