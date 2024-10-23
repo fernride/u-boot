@@ -140,13 +140,7 @@ static char *eth_high_lvl_counters2[] = {
 	"N_QFULL        ",
 };
 
-struct sja_parms {
-	u32 bus;
-	u32 cs;
-	u32 devid;
-	u32 bin_len;
-	const u8 *cfg_bin;
-};
+
 
 static struct spi_slave *get_spi_slave(struct sja_parms *sjap)
 {
@@ -790,7 +784,7 @@ static bool sja1105_speed_control(struct udevice *dev, char *options)
 	return true;
 }
 
-static void sja1105_reset_ports(struct udevice *dev)
+void sja1105_reset_ports(struct udevice *dev)
 {
 	struct sja_parms *sjap = dev_get_priv(dev);
 	int i, val;
@@ -868,7 +862,7 @@ static int load_config_file(struct udevice *dev)
 
 #define BASE_TIMER_CLK_OUTCLK_7_C 0x74
 #define BASE_MCSS_CLK_OUTCLK_6_C  0x70
-static int sja11105_dm_probe(struct udevice *dev)
+int sja11105_dm_probe(struct udevice *dev)
 {
 	struct sja_parms *sjap = dev_get_priv(dev);
 	int cs = spi_chip_select(dev);
@@ -1838,7 +1832,7 @@ U_BOOT_DRIVER(sja1105_fw_loader) = {
 	.priv_auto = sizeof(struct sja_parms),
 };
 
-static int get_sja1105_device(struct udevice **dev, struct sja_parms *sjap)
+int get_sja1105_device(struct udevice **dev, struct sja_parms *sjap)
 {
 	struct udevice *parent;
 	size_t i;

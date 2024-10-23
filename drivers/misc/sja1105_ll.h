@@ -287,4 +287,19 @@ enum sja1105_gen_status_reg {
 
 #define SJA1105_PORT_NB 5
 
+struct sja_parms {
+	u32 bus;
+	u32 cs;
+	u32 devid;
+	u32 bin_len;
+	const u8 *cfg_bin;
+};
+
+int get_sja1105_device(struct udevice **dev, struct sja_parms *sjap);
+
+void sja1105_reset_ports(struct udevice *dev);
+
+int init_ports_fernride(struct udevice *dev, int init_100basetx);
+
+int sja11105_dm_probe(struct udevice *dev);
 #endif

@@ -62,6 +62,8 @@
 #include <asm-generic/gpio.h>
 #include <efi_loader.h>
 
+#include "../drivers/misc/sja1105_ll.h"
+
 DECLARE_GLOBAL_DATA_PTR;
 
 ulong monitor_flash_len;
@@ -590,6 +592,40 @@ static int run_main_loop(void)
 	return 0;
 }
 
+static int init_fernride_networking(void)
+{
+	struct udevice *dev;
+	struct sja_parms sjap;
+	int ret;
+
+	printf("Initializing SJA network switch\n");
+	ret = get_sja1105_device(&dev, &sjap);
+	if (ret) {
+		printf("Could not get SJA device ret: %d BUS: %u CS: %u\n",
+		       ret, sjap.bus, sjap.cs);
+		return ret;
+	}
+
+	// I think this might get called also the first time you run
+	// the sja command, but there should be no harm in running the
+	// probe function twice. it will just mean that we configure the
+	// SJA switch twice.
+	ret = sja11105_dm_probe(dev);
+	if (ret) {
+		printf("Failed to probe SJA device ret: %d\n", ret);
+		return ret;
+	}
+
+	ret = init_ports_fernride(dev, 0);
+	if (ret) {
+		printf("Failed to init ports ret: %d\n", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+
 //second stage
 
 /*
@@ -801,6 +837,7 @@ static init_fnc_t init_sequence_r[] = {
 #ifdef CONFIG_EFI_SETUP_EARLY
 	(init_fnc_t)efi_init_obj_list,
 #endif
+	init_fernride_networking,
 	run_main_loop,
 };
 
