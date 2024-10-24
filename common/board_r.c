@@ -598,6 +598,9 @@ static int init_fernride_networking(void)
 	struct sja_parms sjap;
 	int ret;
 
+	sjap.cs = 0;
+	sjap.bus = 2;
+
 	printf("Initializing SJA network switch\n");
 	ret = get_sja1105_device(&dev, &sjap);
 	if (ret) {
