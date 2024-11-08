@@ -298,8 +298,6 @@
 #  if defined(CONFIG_QSPI_BOOT)
 #    define CONFIG_BOOTCOMMAND\
 	"run netinit; " \
-	"run init_mmc_fs; " \
-	"run loadimage || run loadtftpimage || run nc; " \
 	"bootm ${loadaddr}; " 
 #  elif defined(CONFIG_SD_BOOT)
 #    if defined(CONFIG_XEN_SUPPORT)
